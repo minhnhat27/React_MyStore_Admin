@@ -1,0 +1,92 @@
+:root {
+  --secondary-color: #6c757d;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Inter var, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI,
+    Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji,
+    Segoe UI Symbol, Noto Color Emoji;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+body {
+  line-height: 1.5;
+  background-color: #efefef;
+  text-rendering: optimizeSpeed;
+  &::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  &::-webkit-scrollbar-track {
+    background: white;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #cccccc;
+    border-radius: 10px;
+  }
+}
+
+a[href] {
+  text-decoration: none;
+}
+
+body.no-scroll {
+  overflow: hidden;
+}
+
+.showSignIn-enter {
+  opacity: 0;
+  transform: scale(0.5);
+}
+
+.showSignIn-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.showSignIn-exit {
+  opacity: 1;
+}
+
+.showSignIn-exit-active {
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.nav a.active,
+.cart a.active {
+  background-color: rgb(14, 165, 233);
+  color: white;
+}
+
+.each-slide-effect > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 20rem;
+}
+
+.each-slide-effect span {
+  padding: 20px;
+  font-size: 20px;
+  background: #efefef;
+  text-align: center;
+}
+
+.indicators {
+  margin-top: 0.3rem !important;
+}
+
+.indicator.active {
+  background: #000;
+}
