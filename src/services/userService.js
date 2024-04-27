@@ -11,3 +11,8 @@ export const debounce = (func, delay) => {
     }, delay)
   }
 }
+
+export const formatter = new Intl.NumberFormat('vi', {
+  style: 'currency',
+  currency: 'VND',
+})

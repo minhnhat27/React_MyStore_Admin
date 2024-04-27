@@ -59,7 +59,7 @@ export default function Login() {
   return (
     <>
       <div className="flex justify-center items-center h-full">
-        <div className="rounded-md bg-zinc-50 h-fit w-11/12 lg:w-1/2 px-10 py-4">
+        <div className="rounded-md bg-zinc-50 h-fit w-11/12 lg:w-1/2 px-10 py-4 drop-shadow">
           <div className="relative flex items-center justify-center">
             <img width="70" height="70" className="py-2 fs-4" src={logo} alt="logo" />
           </div>
