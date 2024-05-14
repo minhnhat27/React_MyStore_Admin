@@ -89,33 +89,41 @@ export default function Sidebar({ toggleSidebar, showSidebar }) {
                   <path d="M15 12a1 1 0 0 0 .962-.726l2-7A1 1 0 0 0 17 3H3.77L3.175.745A1 1 0 0 0 2.208 0H1a1 1 0 0 0 0 2h.438l.6 2.255v.019l2 7 .746 2.986A3 3 0 1 0 9 17a2.966 2.966 0 0 0-.184-1h2.368c-.118.32-.18.659-.184 1a3 3 0 1 0 3-3H6.78l-.5-2H15Z" />
                 </svg>
                 <span className="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">
-                  E-commerce
+                  Product Attributes
                 </span>
                 {showDropdown ? <BsChevronDown /> : <BsChevronLeft />}
               </button>
               <ul id="dropdown-example" className={`${showDropdown || 'hidden'} py-2 space-y-2`}>
                 <li>
                   <NavLink
-                    to="/products-managment"
+                    to="/brands-managment"
                     className="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
                   >
-                    Products
+                    Brands
                   </NavLink>
                 </li>
                 <li>
                   <NavLink
-                    to="/billing"
+                    to="/categories-managment"
                     className="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
                   >
-                    Billing
+                    Categories
                   </NavLink>
                 </li>
                 <li>
                   <NavLink
-                    to="/invoice"
+                    to="/materials-managment"
                     className="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
                   >
-                    Invoice
+                    Materials
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink
+                    to="/sizes-managment"
+                    className="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+                  >
+                    Sizes
                   </NavLink>
                 </li>
               </ul>
@@ -162,7 +170,7 @@ export default function Sidebar({ toggleSidebar, showSidebar }) {
             </li>
             <li>
               <NavLink
-                to="/users"
+                to="/users-managment"
                 className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
               >
                 <svg

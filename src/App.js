@@ -8,6 +8,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 
 import { ReactNotifications } from 'react-notifications-component'
 import 'react-notifications-component/dist/theme.css'
+import { Spin } from 'antd'
 
 function App() {
   const [state, dispatch] = useReducer(reducer, initialState)
@@ -20,6 +21,7 @@ function App() {
           <Router>
             <div className="App">
               <ReactNotifications />
+              <Spin spinning={isLoading} fullscreen />
               <Routes>
                 {GenerateRoutes(publicRoutes)}
                 {state.isAuthenticated && GenerateRoutes(privateRoutes)}

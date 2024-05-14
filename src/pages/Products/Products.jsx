@@ -1,7 +1,39 @@
 import { Link } from 'react-router-dom'
 import Search from '../../components/Search'
+import { useEffect, useState } from 'react'
+import { useLoading } from '../../App'
+import productService from '../../services/productService'
+import notificationService from '../../services/notificationService'
+import { Image, Switch } from 'antd'
+import { toImageSrc } from '../../services/userService'
+import { CheckOutlined, CloseOutlined } from '@ant-design/icons'
 
 export default function Products() {
+  const { setIsLoading } = useLoading()
+  const [products, setProducts] = useState([])
+
+  useEffect(() => {
+    setIsLoading(true)
+    productService
+      .getProducts()
+      .then((res) => setProducts(res.data))
+      .catch(() => notificationService.Danger('Get failed products'))
+      .finally(() => setIsLoading(false))
+  }, [setIsLoading])
+
+  const handleChangeEnable = (e, id) => {
+    setIsLoading(true)
+    const data = {
+      id: id,
+      enable: e,
+    }
+    productService
+      .updateProductEnable(data)
+      .then(() => notificationService.Success('Update successfull product'))
+      .catch(() => notificationService.Danger('Update failed product'))
+      .finally(() => setIsLoading(false))
+  }
+
   return (
     <>
       <div className="pb-4">
@@ -47,57 +79,83 @@ export default function Products() {
           </div>
 
           <div className="relative overflow-x-auto px-4">
-            <table className="w-full text-sm text-left rtl:text-right text-gray-700 dark:text-gray-400">
+            <table className="w-full text-center text-sm rtl:text-right text-gray-700 dark:text-gray-400">
               <thead className="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                 <tr className="select-none">
-                  <th scope="col" className="w-2/5">
-                    Product name
+                  <th scope="col" className="p-2">
+                    ID
                   </th>
-                  <th scope="col" className="w-1/5">
-                    Color
+                  <th scope="col" className="p-2">
+                    Image
                   </th>
-                  <th scope="col" className="w-1/5">
+                  <th scope="col" className="p-2">
+                    Product Name
+                  </th>
+                  <th scope="col" className="p-2">
+                    Gender
+                  </th>
+                  <th scope="col" className="p-2">
+                    Brand
+                  </th>
+                  <th scope="col" className="p-2">
                     Category
                   </th>
-                  <th scope="col" className="w-1/5">
-                    Price
+                  <th scope="col" className="p-2">
+                    Sold
+                  </th>
+                  <th scope="col" className="p-2">
+                    Enable
                   </th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                  <th
-                    scope="row"
-                    className="py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                  >
-                    Apple MacBook Pro 17"
-                  </th>
-                  <td className="py-4">Silver</td>
-                  <td className="py-4">Laptop</td>
-                  <td className="py-4">$2999</td>
-                </tr>
-                <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                  <th
-                    scope="row"
-                    className="py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                  >
-                    Microsoft Surface Pro
-                  </th>
-                  <td className="py-4">White</td>
-                  <td className="py-4">Laptop PC</td>
-                  <td className="py-4">$1999</td>
-                </tr>
-                <tr className="bg-white dark:bg-gray-800">
-                  <th
-                    scope="row"
-                    className="py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                  >
-                    Magic Mouse 2
-                  </th>
-                  <td className="py-4">Black</td>
-                  <td className="py-4">Accessories</td>
-                  <td className="py-4">$99</td>
-                </tr>
+                {products.map((product, i) => {
+                  return (
+                    <tr key={i} className="bg-white border-t dark:bg-gray-800 dark:border-gray-700">
+                      <th
+                        scope="row"
+                        className="py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                      >
+                        <Link
+                          to={`product-detail?id=${product.id}`}
+                          className="hover:text-blue-500"
+                        >
+                          {product.id}
+                        </Link>
+                      </th>
+                      <td className="py-2">
+                        <Image
+                          width={100}
+                          height={100}
+                          className="object-contain"
+                          src={toImageSrc(product.base64String)}
+                          alt=""
+                        />
+                      </td>
+                      <td className="py-2">
+                        <Link
+                          to={`product-detail?id=${product.id}`}
+                          className="hover:text-blue-500"
+                        >
+                          {product.name}
+                        </Link>
+                      </td>
+                      <td className="py-2">{product.gender}</td>
+                      <td className="py-2">{product.brandName}</td>
+                      <td className="py-2">{product.categoryName}</td>
+                      <td className="py-2">{product.sold}</td>
+                      <td className="py-2">
+                        <Switch
+                          checkedChildren={<CheckOutlined />}
+                          unCheckedChildren={<CloseOutlined />}
+                          defaultChecked={product.enable}
+                          onChange={(e) => handleChangeEnable(e, product.id)}
+                          className="bg-gray-500"
+                        />
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
