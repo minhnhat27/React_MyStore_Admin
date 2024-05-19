@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react'
 export default function Header({ toggleSidebar, showSidebar }) {
   const { state, dispatch } = useAuth()
   const navigate = useNavigate()
+  const [user, setUser] = useState({})
 
   const [darkMode, setDarkMode] = useState(false)
 
@@ -34,6 +35,11 @@ export default function Header({ toggleSidebar, showSidebar }) {
       document.documentElement.classList.add('light')
     }
   }, [darkMode])
+
+  useEffect(() => {
+    const user = authService.getCurrentUser()
+    user ? setUser({ fullName: user.fullName, email: user.email }) : setUser({})
+  }, [state.isAuthenticated])
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode)
@@ -184,10 +190,10 @@ export default function Header({ toggleSidebar, showSidebar }) {
                   </button>
                   <div className="px-4 py-3">
                     <span className="block text-sm text-gray-900 dark:text-white">
-                      Bonnie Green
+                      {user.fullName}
                     </span>
                     <span className="block text-sm  text-gray-500 truncate dark:text-gray-400">
-                      name@flowbite.com
+                      {user.email}
                     </span>
                   </div>
                 </div>

@@ -1,5 +1,17 @@
 import { useEffect, useState } from 'react'
-import { Button, Form, Image, Input, InputNumber, Modal, Select, Spin, Switch, Upload } from 'antd'
+import {
+  Button,
+  ConfigProvider,
+  Form,
+  Image,
+  Input,
+  InputNumber,
+  Modal,
+  Select,
+  Spin,
+  Switch,
+  Upload,
+} from 'antd'
 import TextArea from 'antd/es/input/TextArea'
 import { CheckOutlined, CloseOutlined, PlusOutlined } from '@ant-design/icons'
 import productService from '../../services/productService'
@@ -12,7 +24,7 @@ import {
   base64toFile,
 } from '../../services/userService'
 import { useLoading } from '../../App'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 export default function ProductDetail() {
   const { setIsLoading } = useLoading()
@@ -49,15 +61,10 @@ export default function ProductDetail() {
     productService
       .fetchProductAttributes()
       .then((data) => {
-        setProductAttributes({
-          ...data,
-          brands: transformDataToLabelValue(data.brands),
-          materials: transformDataToLabelValue(data.materials),
-          sizes: transformDataToLabelValue(data.sizes),
-          categories: transformDataToLabelValue(data.categories),
-        })
-        setSize(transformDataToLabelValue(data.sizes))
-
+        Object.keys(data).forEach((key) => (data[key] = transformDataToLabelValue(data[key])))
+        setProductAttributes(data)
+        setSize(data.sizes)
+        
         productService
           .getProduct(id)
           .then((res) => {
@@ -434,6 +441,21 @@ export default function ProductDetail() {
               </Form.Item>
             </div>
             <div className="flex space-x-2">
+              <Link to="/products-managment" className="w-full">
+                <ConfigProvider
+                  theme={{
+                    components: {
+                      Button: {
+                        colorPrimaryHover: 'rgb(156, 163, 175)',
+                      },
+                    },
+                  }}
+                >
+                  <Button type="primary" className="w-full bg-gray-500" size="large">
+                    Cancel
+                  </Button>
+                </ConfigProvider>
+              </Link>
               <Button type="primary" htmlType="submit" className="w-full bg-blue-500" size="large">
                 {updateLoading ? <Spin /> : 'Save'}
               </Button>

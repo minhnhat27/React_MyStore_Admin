@@ -1,19 +1,19 @@
 import authService from './authService'
 
 export const authHeader = () => {
-  const userToken = authService.getCurrentUser()
-  if (userToken) {
+  const user = authService.getCurrentUser()
+  if (user && user.jwt) {
     return {
-      Authorization: 'Bearer ' + userToken,
+      Authorization: 'Bearer ' + user.jwt,
     }
   } else return {}
 }
 
 export const authMediaHeader = () => {
-  const userToken = authService.getCurrentUser()
-  if (userToken) {
+  const user = authService.getCurrentUser()
+  if (user && user.jwt) {
     return {
-      Authorization: 'Bearer ' + userToken,
+      Authorization: 'Bearer ' + user.jwt,
       'Content-Type': 'multipart/form-data',
     }
   } else return {}

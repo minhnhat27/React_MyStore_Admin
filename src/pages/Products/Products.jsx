@@ -1,10 +1,9 @@
 import { Link } from 'react-router-dom'
-import Search from '../../components/Search'
 import { useEffect, useState } from 'react'
 import { useLoading } from '../../App'
 import productService from '../../services/productService'
 import notificationService from '../../services/notificationService'
-import { Image, Switch } from 'antd'
+import { Image, Input, Pagination, Switch } from 'antd'
 import { toImageSrc } from '../../services/userService'
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons'
 
@@ -12,14 +11,33 @@ export default function Products() {
   const { setIsLoading } = useLoading()
   const [products, setProducts] = useState([])
 
+  const [searchKey, setSearchKey] = useState('')
+
+  const [totalItems, setTotalItems] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [currentPageSize, setCurrentPageSize] = useState(10)
+
   useEffect(() => {
-    setIsLoading(true)
-    productService
-      .getProducts()
-      .then((res) => setProducts(res.data))
-      .catch(() => notificationService.Danger('Get failed products'))
-      .finally(() => setIsLoading(false))
-  }, [setIsLoading])
+    if (!searchKey) {
+      setIsLoading(true)
+      productService
+        .getProducts(currentPage, currentPageSize)
+        .then((res) => {
+          setProducts(res.data?.items)
+          setTotalItems(res.data?.totalItems)
+        })
+        .catch(() => notificationService.Danger('Get failed products'))
+        .finally(() => setIsLoading(false))
+    } else {
+      productService
+        .getProducts(currentPage, currentPageSize, searchKey)
+        .then((res) => {
+          setProducts(res.data?.items)
+          setTotalItems(res.data?.totalItems)
+        })
+        .catch(() => notificationService.Danger('Search failed products'))
+    }
+  }, [setIsLoading, currentPage, currentPageSize, searchKey])
 
   const handleChangeEnable = (e, id) => {
     setIsLoading(true)
@@ -32,6 +50,17 @@ export default function Products() {
       .then(() => notificationService.Success('Update successfull product'))
       .catch(() => notificationService.Danger('Update failed product'))
       .finally(() => setIsLoading(false))
+  }
+
+  const handleSearch = (key) => {
+    setSearchKey(key)
+    productService
+      .getProducts(currentPage, currentPageSize, key)
+      .then((res) => {
+        setProducts(res.data?.items)
+        setTotalItems(res.data?.totalItems)
+      })
+      .catch(() => notificationService.Danger('Search failed products'))
   }
 
   return (
@@ -51,21 +80,8 @@ export default function Products() {
             on to find the exact product you need.
           </span>
           <div className="py-4 text-sm flex items-center space-x-2">
-            <div className="flex items-center space-x-2">
-              <span className="hidden sm:block text-gray-500">Showing</span>
-              <select
-                id="countries"
-                className="bg-gray-50 border cursor-pointer outline-none w-fit border-gray-300 text-gray-900 text-sm rounded-lg block p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-              >
-                <option value="10">10</option>
-                <option value="20">20</option>
-                <option value="30">30</option>
-                <option value="50">50</option>
-              </select>
-            </div>
             <div className="flex flex-1 items-center space-x-2">
-              <span className="hidden sm:block text-gray-500">entries</span>
-              <Search />
+              <Input.Search size="large" allowClear onSearch={(key) => handleSearch(key)} />
             </div>
             <div>
               <Link
@@ -80,7 +96,7 @@ export default function Products() {
 
           <div className="relative overflow-x-auto px-4">
             <table className="w-full text-center text-sm rtl:text-right text-gray-700 dark:text-gray-400">
-              <thead className="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+              <thead className="text-sm whitespace-nowrap text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                 <tr className="select-none">
                   <th scope="col" className="p-2">
                     ID
@@ -159,6 +175,19 @@ export default function Products() {
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            className="text-center"
+            total={totalItems}
+            showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
+            defaultPageSize={currentPageSize}
+            defaultCurrent={currentPage}
+            showSizeChanger={true}
+            onChange={(newPage, newPageSize) => {
+              setCurrentPage(newPage)
+              setCurrentPageSize(newPageSize)
+            }}
+          />
         </div>
       </div>
     </>

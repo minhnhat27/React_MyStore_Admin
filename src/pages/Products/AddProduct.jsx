@@ -1,11 +1,23 @@
 import { useEffect, useState } from 'react'
-import { Button, Form, Image, Input, InputNumber, Select, Spin, Switch, Upload } from 'antd'
+import {
+  Button,
+  ConfigProvider,
+  Form,
+  Image,
+  Input,
+  InputNumber,
+  Select,
+  Spin,
+  Switch,
+  Upload,
+} from 'antd'
 import TextArea from 'antd/es/input/TextArea'
 import { CheckOutlined, CloseOutlined, PlusOutlined } from '@ant-design/icons'
 import productService from '../../services/productService'
 import notificationService from '../../services/notificationService'
 import { gender, getBase64, transformDataToLabelValue } from '../../services/userService'
 import { useLoading } from '../../App'
+import { Link } from 'react-router-dom'
 
 export default function AddProduct() {
   const { setIsLoading } = useLoading()
@@ -32,14 +44,9 @@ export default function AddProduct() {
     productService
       .fetchProductAttributes()
       .then((data) => {
-        setProductAttributes({
-          ...data,
-          brands: transformDataToLabelValue(data.brands),
-          materials: transformDataToLabelValue(data.materials),
-          sizes: transformDataToLabelValue(data.sizes),
-          categories: transformDataToLabelValue(data.categories),
-        })
-        setSize(transformDataToLabelValue(data.sizes))
+        Object.keys(data).forEach((key) => (data[key] = transformDataToLabelValue(data[key])))
+        setProductAttributes(data)
+        setSize(data.sizes)
       })
       .catch(() => notificationService.Danger('Get failed Product Attributes'))
       .finally(() => setIsLoading(false))
@@ -357,9 +364,26 @@ export default function AddProduct() {
                 />
               </Form.Item>
             </div>
-            <Button type="primary" htmlType="submit" className="w-full bg-blue-500" size="large">
-              {loading ? <Spin /> : 'Save'}
-            </Button>
+            <div className="flex space-x-2">
+              <Link to="/products-managment" className="w-full">
+                <ConfigProvider
+                  theme={{
+                    components: {
+                      Button: {
+                        colorPrimaryHover: 'rgb(156, 163, 175)',
+                      },
+                    },
+                  }}
+                >
+                  <Button type="primary" className="w-full bg-gray-500" size="large">
+                    Cancel
+                  </Button>
+                </ConfigProvider>
+              </Link>
+              <Button type="primary" htmlType="submit" className="w-full bg-blue-500" size="large">
+                {loading ? <Spin /> : 'Save'}
+              </Button>
+            </div>
           </div>
         </Form>
       </div>
