@@ -1,10 +1,9 @@
 import { useLoading } from '../../App'
 import Search from '../../components/Search'
-import { Button, Form, Input, Modal, Spin } from 'antd'
+import { Button, Form, Input, Modal, Spin, message } from 'antd'
 import { useState } from 'react'
 import { DeleteTwoTone } from '@ant-design/icons'
 import productService from '../../services/productService'
-import notificationService from '../../services/notificationService'
 import { useEffect } from 'react'
 
 export default function Materials() {
@@ -24,7 +23,7 @@ export default function Materials() {
     productService
       .getMaterials()
       .then((res) => setMaterials(res.data))
-      .catch(() => notificationService.Danger('Get failed materials'))
+      .catch((err) => message.error(err.message))
       .finally(() => setIsLoading(false))
   }, [update, setIsLoading])
 
@@ -35,9 +34,9 @@ export default function Materials() {
       .then(() => {
         form.resetFields()
         setUpdate(!update)
-        notificationService.Success('Add successful material')
+        message.success('Successfully')
       })
-      .catch(() => notificationService.Danger('Add failed material'))
+      .catch((err) => message.error(err.message))
       .finally(() => setAddMaterialLoading(false))
   }
 
@@ -47,9 +46,9 @@ export default function Materials() {
       .deleteMaterial(materialDelete.id)
       .then(() => {
         setUpdate(!update)
-        notificationService.Success('Delete successful material')
+        message.success('Successfully')
       })
-      .catch(() => notificationService.Danger('Delete failed material'))
+      .catch((err) => message.error(err.message))
       .finally(() => {
         setOpen(false)
         setDeleteLoading(false)
@@ -168,7 +167,7 @@ export default function Materials() {
                 </Form.Item>
               </div>
 
-              <Button type="default" htmlType="submit" className="w-full" size="large">
+              <Button type="primary" htmlType="submit" className="w-full bg-blue-500" size="large">
                 {addMaterialLoading ? <Spin /> : 'Save'}
               </Button>
             </Form>

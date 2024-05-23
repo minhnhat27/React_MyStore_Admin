@@ -15,23 +15,49 @@ import Sizes from '../pages/ProductAttributes/Sizes'
 import ProductDetail from '../pages/Products/ProductDetail'
 import Users from '../pages/Users'
 
+import {
+  ContainerOutlined,
+  LoginOutlined,
+  DesktopOutlined,
+  MailOutlined,
+  PieChartOutlined,
+} from '@ant-design/icons'
+export const navigateItems = [
+  { key: '/', icon: <PieChartOutlined />, label: 'Dashboard' },
+  { key: '/orders-management', icon: <DesktopOutlined />, label: 'Orders' },
+  { key: '/products-management', icon: <ContainerOutlined />, label: 'Products' },
+  { key: '/users-management', icon: <ContainerOutlined />, label: 'Users' },
+  {
+    key: 'sub1',
+    label: 'Product Attributes',
+    icon: <MailOutlined />,
+    children: [
+      { key: '/brands-management', label: 'Brands' },
+      { key: '/categories-management', label: 'Categories' },
+      { key: '/materials-management', label: 'Materials' },
+      { key: '/sizes-management', label: 'Sizes' },
+    ],
+  },
+  { key: '/login', icon: <LoginOutlined />, label: 'Login' },
+]
+
 export const publicRoutes = [
   { path: '/', component: Home },
   { path: '/login', component: Login },
 
-  { path: '/products-managment', component: Products },
-  { path: '/products-managment/product-detail', component: ProductDetail },
-  { path: '/products-managment/add-product', component: AddProduct },
+  { path: '/products-management', component: Products },
+  { path: '/products-management/product-detail/:id', component: ProductDetail },
+  { path: '/products-management/add-product', component: AddProduct },
 
-  { path: '/users-managment', component: Users },
+  { path: '/users-management', component: Users },
 
-  { path: '/orders-managment', component: Orders },
-  { path: '/orders-managment/order-detail', component: OrderDetail },
+  { path: '/orders-management', component: Orders },
+  { path: '/orders-management/order-detail', component: OrderDetail },
 
-  { path: '/brands-managment', component: Brand },
-  { path: '/categories-managment', component: Category },
-  { path: '/materials-managment', component: Materials },
-  { path: '/sizes-managment', component: Sizes },
+  { path: '/brands-management', component: Brand },
+  { path: '/categories-management', component: Category },
+  { path: '/materials-management', component: Materials },
+  { path: '/sizes-management', component: Sizes },
 ]
 
 export const privateRoutes = []

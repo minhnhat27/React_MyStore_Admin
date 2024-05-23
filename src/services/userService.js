@@ -22,6 +22,10 @@ export const formatUSD = new Intl.NumberFormat('en-US', {
   currency: 'USD',
 })
 
+export const isEmptyObject = (obj) => {
+  return JSON.stringify(obj) === '{}'
+}
+
 export const formatDate = (isoDateStr) => {
   const date = new Date(isoDateStr)
   return date.toLocaleString('en-GB')

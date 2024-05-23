@@ -64,7 +64,7 @@ const fetchProductAttributes = async () => {
     }
     return data
   } catch (error) {
-    console.log(error)
+    return new Error(error)
   }
 }
 

@@ -1,10 +1,9 @@
 import { useLoading } from '../../App'
 import Search from '../../components/Search'
-import { Button, Form, Input, Modal, Spin } from 'antd'
+import { Button, Form, Input, Modal, Spin, message } from 'antd'
 import { useState } from 'react'
 import { DeleteTwoTone } from '@ant-design/icons'
 import productService from '../../services/productService'
-import notificationService from '../../services/notificationService'
 import { useEffect } from 'react'
 
 export default function Sizes() {
@@ -24,7 +23,7 @@ export default function Sizes() {
     productService
       .getSizes()
       .then((res) => setSizes(res.data))
-      .catch(() => notificationService.Danger('Get failed sizes'))
+      .catch((err) => message.error(err.message))
       .finally(() => setIsLoading(false))
   }, [update, setIsLoading])
 
@@ -35,9 +34,9 @@ export default function Sizes() {
       .then(() => {
         form.resetFields()
         setUpdate(!update)
-        notificationService.Success('Add successful Size')
+        message.success('Successfully')
       })
-      .catch(() => notificationService.Danger('Add failed Size'))
+      .catch((err) => message.error(err.message))
       .finally(() => setAddSizeLoading(false))
   }
 
@@ -47,9 +46,9 @@ export default function Sizes() {
       .deleteSize(sizeDelete.id)
       .then(() => {
         setUpdate(!update)
-        notificationService.Success('Delete successful Size')
+        message.success('Successfully')
       })
-      .catch(() => notificationService.Danger('Delete failed Size'))
+      .catch((err) => message.error(err.message))
       .finally(() => {
         setOpen(false)
         setDeleteLoading(false)
@@ -185,7 +184,7 @@ export default function Sizes() {
                   />
                 </Form.Item>
               </div>
-              <Button type="default" htmlType="submit" className="w-full" size="large">
+              <Button type="primary" htmlType="submit" className="w-full bg-blue-500" size="large">
                 {addSizeLoading ? <Spin /> : 'Save'}
               </Button>
             </Form>

@@ -4,9 +4,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import logo from '../../logo.png'
 import authService from '../../services/authService'
 import { useAuth } from '../../App'
-import notificationService from '../../services/notificationService'
 import authActions from '../../services/authAction'
-import { Button, Form, Input, Spin } from 'antd'
+import { Button, Form, Input, Spin, message } from 'antd'
 
 export default function Login() {
   const { state, dispatch } = useAuth()
@@ -28,7 +27,6 @@ export default function Login() {
       .then(() => {
         dispatch(authActions.LOGIN)
         navigate('/')
-        // notificationService.Success('Login successfully')
       })
       .catch((err) => {
         err.response
@@ -38,7 +36,7 @@ export default function Login() {
                 errors: ['Invalid username or password'],
               },
             ])
-          : notificationService.Danger(err.message)
+          : message.error(err.message)
       })
       .finally(() => setLoading(false))
   }

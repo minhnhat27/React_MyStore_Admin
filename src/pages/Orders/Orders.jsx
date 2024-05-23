@@ -1,23 +1,58 @@
 import { Link } from 'react-router-dom'
-import Search from '../../components/Search'
 import { useLoading } from '../../App'
 import { useEffect, useState } from 'react'
 import orderService from '../../services/orderService'
-import notificationService from '../../services/notificationService'
 import { formatDate, formatUSD } from '../../services/userService'
+import { Button, Input, Pagination, message } from 'antd'
 
 export default function Orders() {
   const { setIsLoading } = useLoading()
   const [orders, setOrders] = useState([])
 
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchKey, setSearchKey] = useState('')
+
+  const [totalItems, setTotalItems] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [currentPageSize, setCurrentPageSize] = useState(10)
+
   useEffect(() => {
-    setIsLoading(true)
-    orderService
-      .getOrders()
-      .then((res) => setOrders(res.data))
-      .catch(() => notificationService.Danger('Get failed orders'))
-      .finally(() => setIsLoading(false))
-  }, [setIsLoading])
+    if (!searchKey) {
+      setIsLoading(true)
+      orderService
+        .getOrders(currentPage, currentPageSize)
+        .then((res) => {
+          setOrders(res.data?.items)
+          setTotalItems(res.data?.totalItems)
+        })
+        .catch((err) => message.error(err.message))
+        .finally(() => setIsLoading(false))
+    } else {
+      orderService
+        .getOrders(currentPage, currentPageSize, searchKey)
+        .then((res) => {
+          setOrders(res.data?.items)
+          setTotalItems(res.data?.totalItems)
+        })
+        .catch((err) => message.error(err.message))
+        .finally(() => setSearchLoading(false))
+    }
+  }, [setIsLoading, currentPage, currentPageSize, searchKey])
+
+  const handleSearch = (key) => {
+    setSearchKey(key)
+    if (!key) {
+      setSearchLoading(true)
+      orderService
+        .getOrders(currentPage, currentPageSize, key)
+        .then((res) => {
+          setOrders(res.data?.items)
+          setTotalItems(res.data?.totalItems)
+        })
+        .catch((err) => message.error(err.message))
+        .finally(() => setSearchLoading(false))
+    }
+  }
 
   return (
     <>
@@ -36,28 +71,15 @@ export default function Orders() {
             to find the exact product you need.
           </span>
           <div className="py-4 text-sm flex items-center space-x-2">
-            <div className="flex items-center space-x-2">
-              <span className="hidden sm:block text-gray-500">Showing</span>
-              <select
-                id="countries"
-                className="bg-gray-50 border cursor-pointer outline-none w-fit border-gray-300 text-gray-900 text-sm rounded-lg block p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-              >
-                <option value="10">10</option>
-                <option value="20">20</option>
-                <option value="30">30</option>
-                <option value="50">50</option>
-              </select>
-            </div>
-            <div className="flex flex-1 items-center space-x-2">
-              <span className="hidden sm:block text-gray-500">entries</span>
-              <Search />
-            </div>
-            <button
-              type="button"
-              className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-2 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
-            >
+            <Input.Search
+              size="large"
+              allowClear
+              loading={searchLoading}
+              onSearch={(key) => handleSearch(key)}
+            />
+            <Button size="large" type="primary" className="bg-blue-500">
               Export all order
-            </button>
+            </Button>
           </div>
 
           <div className="relative overflow-x-auto px-4">
@@ -111,6 +133,19 @@ export default function Orders() {
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            className="text-center"
+            total={totalItems}
+            showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
+            defaultPageSize={currentPageSize}
+            defaultCurrent={currentPage}
+            showSizeChanger={true}
+            onChange={(newPage, newPageSize) => {
+              setCurrentPage(newPage)
+              setCurrentPageSize(newPageSize)
+            }}
+          />
         </div>
       </div>
     </>

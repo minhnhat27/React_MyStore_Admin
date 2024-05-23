@@ -22,13 +22,14 @@ import {
   toImageSrc,
   transformDataToLabelValue,
   base64toFile,
+  isEmptyObject,
 } from '../../services/userService'
 import { useLoading } from '../../App'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
 export default function ProductDetail() {
   const { setIsLoading } = useLoading()
-  const [params] = useSearchParams()
+  const { id } = useParams()
   const navigate = useNavigate()
 
   const [open, setOpen] = useState(false)
@@ -56,15 +57,15 @@ export default function ProductDetail() {
 
   useEffect(() => {
     setIsLoading(true)
-    const id = params.get('id')
     setProductId(id)
     productService
       .fetchProductAttributes()
       .then((data) => {
-        Object.keys(data).forEach((key) => (data[key] = transformDataToLabelValue(data[key])))
-        setProductAttributes(data)
-        setSize(data.sizes)
-        
+        if (data) {
+          Object.keys(data).forEach((key) => (data[key] = transformDataToLabelValue(data[key])))
+          setProductAttributes(data)
+          setSize(data.sizes)
+        }
         productService
           .getProduct(id)
           .then((res) => {
@@ -84,14 +85,14 @@ export default function ProductDetail() {
             })
             setFileList(files)
           })
-          .catch((res) => notificationService.Danger(res.message))
+          .catch((err) => notificationService.Danger(err.message))
           .finally(() => setIsLoading(false))
       })
-      .catch(() => {
+      .catch((err) => {
         setIsLoading(false)
-        notificationService.Danger('Get failed Product Attributes')
+        notificationService.Danger(err.message)
       })
-  }, [params, form, setIsLoading])
+  }, [id, form, setIsLoading])
 
   const handleSelectSize = (value) => {
     var items = []
@@ -154,7 +155,7 @@ export default function ProductDetail() {
       .then(() => {
         notificationService.Success('Update successful product')
       })
-      .catch(() => notificationService.Danger('Update failed product'))
+      .catch((err) => notificationService.Danger(err.message))
       .finally(() => setUpdateLoading(false))
   }
 
@@ -163,7 +164,7 @@ export default function ProductDetail() {
     productService
       .deleteProduct(productId)
       .then(() => {
-        navigate('/products-managment')
+        navigate(-1)
         notificationService.Success('Delete successful product')
       })
       .catch(() => notificationService.Danger('Delete failed product'))
@@ -441,25 +442,35 @@ export default function ProductDetail() {
               </Form.Item>
             </div>
             <div className="flex space-x-2">
-              <Link to="/products-managment" className="w-full">
-                <ConfigProvider
-                  theme={{
-                    components: {
-                      Button: {
-                        colorPrimaryHover: 'rgb(156, 163, 175)',
-                      },
+              <ConfigProvider
+                theme={{
+                  components: {
+                    Button: {
+                      colorPrimaryHover: 'rgb(156, 163, 175)',
                     },
-                  }}
+                  },
+                }}
+              >
+                <Button
+                  type="primary"
+                  onClick={() => navigate(-1)}
+                  className="w-full bg-gray-500"
+                  size="large"
                 >
-                  <Button type="primary" className="w-full bg-gray-500" size="large">
-                    Cancel
-                  </Button>
-                </ConfigProvider>
-              </Link>
-              <Button type="primary" htmlType="submit" className="w-full bg-blue-500" size="large">
+                  Cancel
+                </Button>
+              </ConfigProvider>
+              <Button
+                disabled={isEmptyObject(productAttributes)}
+                type="primary"
+                htmlType="submit"
+                className="w-full bg-blue-500"
+                size="large"
+              >
                 {updateLoading ? <Spin /> : 'Save'}
               </Button>
               <Button
+                disabled={isEmptyObject(productAttributes)}
                 type="primary"
                 danger
                 onClick={() => setOpen(true)}

@@ -2,8 +2,7 @@ import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useLoading } from '../../App'
 import productService from '../../services/productService'
-import notificationService from '../../services/notificationService'
-import { Image, Input, Pagination, Switch } from 'antd'
+import { Button, Image, Input, Pagination, Switch, message } from 'antd'
 import { toImageSrc } from '../../services/userService'
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons'
 
@@ -11,6 +10,7 @@ export default function Products() {
   const { setIsLoading } = useLoading()
   const [products, setProducts] = useState([])
 
+  const [searchLoading, setSearchLoading] = useState(false)
   const [searchKey, setSearchKey] = useState('')
 
   const [totalItems, setTotalItems] = useState(0)
@@ -26,7 +26,7 @@ export default function Products() {
           setProducts(res.data?.items)
           setTotalItems(res.data?.totalItems)
         })
-        .catch(() => notificationService.Danger('Get failed products'))
+        .catch((err) => message.error(err.message))
         .finally(() => setIsLoading(false))
     } else {
       productService
@@ -35,32 +35,37 @@ export default function Products() {
           setProducts(res.data?.items)
           setTotalItems(res.data?.totalItems)
         })
-        .catch(() => notificationService.Danger('Search failed products'))
+        .catch((err) => message.error(err.message))
+        .finally(() => setSearchLoading(false))
     }
   }, [setIsLoading, currentPage, currentPageSize, searchKey])
 
   const handleChangeEnable = (e, id) => {
-    setIsLoading(true)
+    //setIsLoading(true)
     const data = {
       id: id,
       enable: e,
     }
     productService
       .updateProductEnable(data)
-      .then(() => notificationService.Success('Update successfull product'))
-      .catch(() => notificationService.Danger('Update failed product'))
-      .finally(() => setIsLoading(false))
+      .then(() => message.success('Success'))
+      .catch((err) => message.error(err.message))
+    //.finally(() => setIsLoading(false))
   }
 
   const handleSearch = (key) => {
     setSearchKey(key)
-    productService
-      .getProducts(currentPage, currentPageSize, key)
-      .then((res) => {
-        setProducts(res.data?.items)
-        setTotalItems(res.data?.totalItems)
-      })
-      .catch(() => notificationService.Danger('Search failed products'))
+    if (!key) {
+      setSearchLoading(true)
+      productService
+        .getProducts(currentPage, currentPageSize, key)
+        .then((res) => {
+          setProducts(res.data?.items)
+          setTotalItems(res.data?.totalItems)
+        })
+        .catch((err) => message.error(err.message))
+        .finally(() => setSearchLoading(false))
+    }
   }
 
   return (
@@ -80,18 +85,15 @@ export default function Products() {
             on to find the exact product you need.
           </span>
           <div className="py-4 text-sm flex items-center space-x-2">
-            <div className="flex flex-1 items-center space-x-2">
-              <Input.Search size="large" allowClear onSearch={(key) => handleSearch(key)} />
-            </div>
-            <div>
-              <Link
-                to="add-product"
-                type="button"
-                className="text-white py-2 px-4 bg-blue-700 hover:bg-blue-800 focus:ring-2 focus:ring-blue-300 font-medium rounded-lg text-sm dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
-              >
-                + Add new
-              </Link>
-            </div>
+            <Input.Search
+              size="large"
+              allowClear
+              loading={searchLoading}
+              onSearch={(key) => handleSearch(key)}
+            />
+            <Button size="large" type="primary" className="bg-blue-500">
+              <Link to="add-product">+ Add new</Link>
+            </Button>
           </div>
 
           <div className="relative overflow-x-auto px-4">
@@ -132,11 +134,8 @@ export default function Products() {
                         scope="row"
                         className="py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
                       >
-                        <Link
-                          to={`product-detail?id=${product.id}`}
-                          className="hover:text-blue-500"
-                        >
-                          {product.id}
+                        <Link to={`product-detail/${product.id}`} className="hover:text-blue-500">
+                          #{product.id}
                         </Link>
                       </th>
                       <td className="py-2">
@@ -149,10 +148,7 @@ export default function Products() {
                         />
                       </td>
                       <td className="py-2">
-                        <Link
-                          to={`product-detail?id=${product.id}`}
-                          className="hover:text-blue-500"
-                        >
+                        <Link to={`product-detail/${product.id}`} className="hover:text-blue-500">
                           {product.name}
                         </Link>
                       </td>

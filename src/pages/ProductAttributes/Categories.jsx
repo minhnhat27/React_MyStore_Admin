@@ -1,10 +1,9 @@
 import { useLoading } from '../../App'
 import Search from '../../components/Search'
-import { Button, Form, Input, Modal, Spin } from 'antd'
+import { Button, Form, Input, Modal, Spin, message } from 'antd'
 import { useState } from 'react'
 import { DeleteTwoTone } from '@ant-design/icons'
 import productService from '../../services/productService'
-import notificationService from '../../services/notificationService'
 import { useEffect } from 'react'
 
 export default function Category() {
@@ -24,7 +23,7 @@ export default function Category() {
     productService
       .getCategories()
       .then((res) => setCategories(res.data))
-      .catch(() => notificationService.Danger('Get failed categories'))
+      .catch((err) => message.error(err.message))
       .finally(() => setIsLoading(false))
   }, [update, setIsLoading])
 
@@ -35,9 +34,9 @@ export default function Category() {
       .then(() => {
         form.resetFields()
         setUpdate(!update)
-        notificationService.Success('Add successful category')
+        message.success('Successfully')
       })
-      .catch(() => notificationService.Danger('Add failed category'))
+      .catch((err) => message.error(err.message))
       .finally(() => setAddCategoryLoading(false))
   }
 
@@ -47,9 +46,9 @@ export default function Category() {
       .deleteCategory(categoryDelete.id)
       .then(() => {
         setUpdate(!update)
-        notificationService.Success('Delete successful category')
+        message.success('Successfully')
       })
-      .catch(() => notificationService.Danger('Delete failed category'))
+      .catch((err) => message.error(err.message))
       .finally(() => {
         setOpen(false)
         setDeleteLoading(false)
@@ -168,7 +167,7 @@ export default function Category() {
                 </Form.Item>
               </div>
 
-              <Button type="default" htmlType="submit" className="w-full" size="large">
+              <Button type="primary" htmlType="submit" className="w-full bg-blue-500" size="large">
                 {addCategoryLoading ? <Spin /> : 'Save'}
               </Button>
             </Form>

@@ -10,16 +10,22 @@ import {
   Spin,
   Switch,
   Upload,
+  message,
 } from 'antd'
 import TextArea from 'antd/es/input/TextArea'
 import { CheckOutlined, CloseOutlined, PlusOutlined } from '@ant-design/icons'
 import productService from '../../services/productService'
-import notificationService from '../../services/notificationService'
-import { gender, getBase64, transformDataToLabelValue } from '../../services/userService'
+import {
+  gender,
+  getBase64,
+  isEmptyObject,
+  transformDataToLabelValue,
+} from '../../services/userService'
 import { useLoading } from '../../App'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 export default function AddProduct() {
+  const navigate = useNavigate()
   const { setIsLoading } = useLoading()
   const [productAttributes, setProductAttributes] = useState({})
   const [size, setSize] = useState([])
@@ -44,11 +50,13 @@ export default function AddProduct() {
     productService
       .fetchProductAttributes()
       .then((data) => {
-        Object.keys(data).forEach((key) => (data[key] = transformDataToLabelValue(data[key])))
-        setProductAttributes(data)
-        setSize(data.sizes)
+        if (data) {
+          Object.keys(data).forEach((key) => (data[key] = transformDataToLabelValue(data[key])))
+          setProductAttributes(data)
+          setSize(data.sizes)
+        }
       })
-      .catch(() => notificationService.Danger('Get failed Product Attributes'))
+      .catch((err) => message.error(err.message))
       .finally(() => setIsLoading(false))
   }, [setIsLoading])
 
@@ -108,9 +116,9 @@ export default function AddProduct() {
         form.resetFields()
         setSizeList([])
         setFileList([])
-        notificationService.Success('Create successful product')
+        message.success('Successfully')
       })
-      .catch(() => notificationService.Danger('Create failed product'))
+      .catch((err) => message.error(err.message))
       .finally(() => setLoading(false))
   }
 
@@ -365,22 +373,31 @@ export default function AddProduct() {
               </Form.Item>
             </div>
             <div className="flex space-x-2">
-              <Link to="/products-managment" className="w-full">
-                <ConfigProvider
-                  theme={{
-                    components: {
-                      Button: {
-                        colorPrimaryHover: 'rgb(156, 163, 175)',
-                      },
+              <ConfigProvider
+                theme={{
+                  components: {
+                    Button: {
+                      colorPrimaryHover: 'rgb(156, 163, 175)',
                     },
-                  }}
+                  },
+                }}
+              >
+                <Button
+                  type="primary"
+                  onClick={() => navigate(-1)}
+                  className="w-full bg-gray-500"
+                  size="large"
                 >
-                  <Button type="primary" className="w-full bg-gray-500" size="large">
-                    Cancel
-                  </Button>
-                </ConfigProvider>
-              </Link>
-              <Button type="primary" htmlType="submit" className="w-full bg-blue-500" size="large">
+                  Cancel
+                </Button>
+              </ConfigProvider>
+              <Button
+                disabled={isEmptyObject(productAttributes)}
+                type="primary"
+                htmlType="submit"
+                className="w-full bg-blue-500"
+                size="large"
+              >
                 {loading ? <Spin /> : 'Save'}
               </Button>
             </div>

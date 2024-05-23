@@ -1,10 +1,9 @@
 import Search from '../../components/Search'
-import { Button, Form, Image, Input, Modal, Spin, Upload } from 'antd'
+import { Button, Form, Image, Input, Modal, Spin, Upload, message } from 'antd'
 import { getBase64, toImageSrc } from '../../services/userService'
 import { useState } from 'react'
 import { PlusOutlined, DeleteTwoTone } from '@ant-design/icons'
 import productService from '../../services/productService'
-import notificationService from '../../services/notificationService'
 import { useEffect } from 'react'
 import { useLoading } from '../../App'
 
@@ -28,7 +27,7 @@ export default function Brand() {
     productService
       .getBrands()
       .then((res) => setBrands(res.data))
-      .catch(() => notificationService.Danger('Get failed brands'))
+      .catch((err) => message.error(err.message))
       .finally(() => setIsLoading(false))
   }, [update, setIsLoading])
 
@@ -53,9 +52,9 @@ export default function Brand() {
         form.resetFields()
         setFileList([])
         setUpdate(!update)
-        notificationService.Success('Add successful brand')
+        message.success('Successfully')
       })
-      .catch(() => notificationService.Danger('Add failed brand'))
+      .catch((err) => message.error(err.message))
       .finally(() => setAddBrandLoading(false))
   }
 
@@ -65,9 +64,9 @@ export default function Brand() {
       .deleteBrand(brandDelete.id)
       .then(() => {
         setUpdate(!update)
-        notificationService.Success('Delete successful brand')
+        message.success('Successfully')
       })
-      .catch(() => notificationService.Danger('Delete failed brand'))
+      .catch((err) => message.error(err.message))
       .finally(() => {
         setOpen(false)
         setDeleteLoading(false)
@@ -241,7 +240,7 @@ export default function Brand() {
                 )}
               </div>
 
-              <Button type="default" htmlType="submit" className="w-full" size="large">
+              <Button type="primary" htmlType="submit" className="w-full bg-blue-500" size="large">
                 {addBrandLoading ? <Spin /> : 'Save'}
               </Button>
             </Form>

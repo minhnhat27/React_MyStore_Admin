@@ -33,6 +33,9 @@ body {
     border-radius: 10px;
   }
 }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 
 a[href] {
   text-decoration: none;
