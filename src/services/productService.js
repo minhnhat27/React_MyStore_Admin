@@ -22,8 +22,6 @@ const deleteProduct = async (id) =>
   await axios.delete(API_URL + `/deleteProduct/${id}`, { headers: authHeader() })
 
 const getBrands = async () => await axios.get(API_URL + '/getBrands', { headers: authHeader() })
-const getBrandNames = async () =>
-  await axios.get(API_URL + '/getBrandNames', { headers: authHeader() })
 const addBrand = async (data) =>
   await axios.post(API_URL + '/addBrand', data, { headers: authMediaHeader() })
 const deleteBrand = async (id) =>
@@ -51,7 +49,7 @@ const deleteSize = async (id) =>
 
 const fetchProductAttributes = async () => {
   try {
-    const brands = await getBrandNames()
+    const brands = await getBrands()
     const materials = await getMaterials()
     const sizes = await getSizes()
     const categories = await getCategories()
@@ -77,7 +75,6 @@ const productService = {
   deleteProduct,
   addBrand,
   getBrands,
-  getBrandNames,
   deleteBrand,
   getCategories,
   addCategory,

@@ -61,16 +61,20 @@ export default function Header({ collapsed, toggleCollapsed }) {
   return (
     <>
       <nav className="bg-white sticky top-0 z-20 border-b border-gray-200 dark:bg-gray-900">
-        <div className="max-w-screen-xl px-2 space-x-2 h-20 flex flex-nowrap items-center justify-between">
+        <div className="max-w-screen-xl px-2 space-x-2 h-20 flex flex-nowrap items-center">
           <Button
             type="text"
             className="flex items-center justify-center text-lg"
             onClick={toggleCollapsed}
           >
-            {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            {sessionStorage.getItem('collapsed') === 'true' || collapsed ? (
+              <MenuUnfoldOutlined />
+            ) : (
+              <MenuFoldOutlined />
+            )}
           </Button>
 
-          <div className="flex end-0 items-center shrink-0 md:order-2 space-x-2 md:space-x-4 rtl:space-x-reverse">
+          <div className="flex flex-1 justify-end items-center shrink-0 md:order-2 space-x-2 md:space-x-4 rtl:space-x-reverse">
             <Badge count={10} className="select-none border rounded-lg">
               <Avatar
                 className="bg-white hover:bg-gray-200 cursor-pointer"
@@ -135,18 +139,13 @@ export default function Header({ collapsed, toggleCollapsed }) {
                   </div>
                 )}
               >
-                <div className="flex items-center cursor-pointer">
-                  <button
-                    type="button"
-                    className="flex text-sm bg-gray-800 rounded-full md:me-0 focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600"
-                  >
-                    <img className="w-8 h-8 rounded-full" src={logo} alt="user" />
-                  </button>
-                  <div className="px-4 py-3">
-                    <span className="block text-sm text-gray-900 dark:text-white">
+                <div className="flex items-center cursor-pointer space-x-2">
+                  <img className="w-8 h-8 rounded-full ring-1" src={logo} alt="user" />
+                  <div className="w-16 sm:w-full">
+                    <span className="block text-sm text-gray-900 truncate dark:text-white">
                       {user.fullName}
                     </span>
-                    <span className="block text-sm  text-gray-500 truncate dark:text-gray-400">
+                    <span className="block text-sm text-gray-500 truncate dark:text-gray-400">
                       {user.email}
                     </span>
                   </div>

@@ -11,6 +11,7 @@ import {
   Spin,
   Switch,
   Upload,
+  message,
 } from 'antd'
 import TextArea from 'antd/es/input/TextArea'
 import { CheckOutlined, CloseOutlined, PlusOutlined } from '@ant-design/icons'
@@ -19,10 +20,9 @@ import notificationService from '../../services/notificationService'
 import {
   gender,
   getBase64,
-  toImageSrc,
   transformDataToLabelValue,
-  base64toFile,
   isEmptyObject,
+  toProductImageUrl,
 } from '../../services/userService'
 import { useLoading } from '../../App'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -37,6 +37,7 @@ export default function ProductDetail() {
   const [deleteLoading, setDeleteLoading] = useState(false)
 
   const [productAttributes, setProductAttributes] = useState({})
+  const [update, setUpdate] = useState(false)
 
   const [form] = Form.useForm()
   const [productId, setProductId] = useState(0)
@@ -66,6 +67,7 @@ export default function ProductDetail() {
           setProductAttributes(data)
           setSize(data.sizes)
         }
+
         productService
           .getProduct(id)
           .then((res) => {
@@ -78,11 +80,13 @@ export default function ProductDetail() {
             })
             setSizeList(sList)
 
-            const files = []
-            res.data.images.forEach((item, i) => {
-              const file = base64toFile(item, 'image' + i)
-              files.push({ thumbUrl: toImageSrc(item), originFileObj: file })
+            const files = res.data.images.map((item) => {
+              return {
+                name: item,
+                url: toProductImageUrl(item),
+              }
             })
+
             setFileList(files)
           })
           .catch((err) => notificationService.Danger(err.message))
@@ -129,7 +133,11 @@ export default function ProductDetail() {
 
     const formData = new FormData()
     formData.append('id', productId)
-    fileList.forEach((item, i) => formData.append(`images[${i}]`, item.originFileObj))
+    fileList.forEach((item, i) => {
+      item.originFileObj
+        ? formData.append(`images[${i}]`, item.originFileObj)
+        : formData.append(`imagesUrl[${i}]`, item.name)
+    })
 
     newSizeList.forEach((item, i) => {
       Object.keys(item).forEach((key) => {
@@ -153,9 +161,10 @@ export default function ProductDetail() {
     productService
       .updateProduct(formData)
       .then(() => {
-        notificationService.Success('Update successful product')
+        message.success('Success')
+        setUpdate(false)
       })
-      .catch((err) => notificationService.Danger(err.message))
+      .catch((err) => message.error(err.message))
       .finally(() => setUpdateLoading(false))
   }
 
@@ -165,9 +174,9 @@ export default function ProductDetail() {
       .deleteProduct(productId)
       .then(() => {
         navigate(-1)
-        notificationService.Success('Delete successful product')
+        message.success('Success')
       })
-      .catch(() => notificationService.Danger('Delete failed product'))
+      .catch((err) => message.error(err.message))
       .finally(() => {
         setOpen(false)
         setDeleteLoading(false)
@@ -203,6 +212,7 @@ export default function ProductDetail() {
         </div>
         <Form
           form={form}
+          onValuesChange={() => setUpdate(true)}
           disabled={updateLoading}
           onFinish={updateProduct}
           className="grid gap-2 grid-cols-1 md:grid-cols-2"
@@ -441,7 +451,28 @@ export default function ProductDetail() {
                 />
               </Form.Item>
             </div>
-            <div className="flex space-x-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <Button
+                disabled={isEmptyObject(productAttributes) || !update || updateLoading}
+                type="primary"
+                htmlType="submit"
+                className="w-full"
+                size="large"
+              >
+                {updateLoading ? <Spin /> : 'Update'}
+              </Button>
+
+              <Button
+                disabled={isEmptyObject(productAttributes) || updateLoading}
+                type="primary"
+                danger
+                onClick={() => setOpen(true)}
+                className="w-full"
+                size="large"
+              >
+                Delete
+              </Button>
+
               <ConfigProvider
                 theme={{
                   components: {
@@ -457,28 +488,9 @@ export default function ProductDetail() {
                   className="w-full bg-gray-500"
                   size="large"
                 >
-                  Cancel
+                  Back
                 </Button>
               </ConfigProvider>
-              <Button
-                disabled={isEmptyObject(productAttributes)}
-                type="primary"
-                htmlType="submit"
-                className="w-full bg-blue-500"
-                size="large"
-              >
-                {updateLoading ? <Spin /> : 'Save'}
-              </Button>
-              <Button
-                disabled={isEmptyObject(productAttributes)}
-                type="primary"
-                danger
-                onClick={() => setOpen(true)}
-                className="w-full"
-                size="large"
-              >
-                Delete
-              </Button>
             </div>
           </div>
         </Form>

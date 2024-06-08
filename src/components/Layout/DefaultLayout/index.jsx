@@ -17,11 +17,15 @@ export default function DefaultLayout({ children }) {
   const regex = location.pathname.match(/^\/[^/]+/)?.at(0) ?? '/'
   const [navSelected, setNavSelected] = useState(regex)
 
-  const toggleCollapsed = () => setCollapsed(!collapsed)
+  const toggleCollapsed = () => {
+    setCollapsed(!collapsed)
+    sessionStorage.setItem('collapsed', !collapsed)
+  }
   const handleMenuClick = ({ key }) => navigate(key)
 
   useEffect(() => {
     window.scrollTo(0, 0)
+    setCollapsed(sessionStorage.getItem('collapsed') === 'true')
   }, [])
 
   useLayoutEffect(() => {
@@ -36,7 +40,9 @@ export default function DefaultLayout({ children }) {
         width={220}
         trigger={null}
         collapsible
-        collapsed={collapsed}
+        collapsed={sessionStorage.getItem('collapsed') === 'true' || collapsed}
+        breakpoint="md"
+        onBreakpoint={(broken) => setCollapsed(broken)}
         style={{ position: 'sticky' }}
         className="no-scrollbar overflow-auto h-screen left-0 top-0 bottom-0"
       >

@@ -3,7 +3,7 @@ import { useLoading } from '../../App'
 import { useEffect, useState } from 'react'
 import orderService from '../../services/orderService'
 import { formatDate, formatUSD } from '../../services/userService'
-import { Button, Input, Pagination, message } from 'antd'
+import { Button, Input, Pagination, Table, Tag, message } from 'antd'
 
 export default function Orders() {
   const { setIsLoading } = useLoading()
@@ -16,43 +16,115 @@ export default function Orders() {
   const [currentPage, setCurrentPage] = useState(1)
   const [currentPageSize, setCurrentPageSize] = useState(10)
 
+  const [paymentMethods, setPaymentMethods] = useState([])
+  const [orderStatus, setOrderStatus] = useState([])
+
+  const columns = [
+    {
+      title: 'ID',
+      dataIndex: 'id',
+      render: (value) => <span className="font-semibold">#{value}</span>,
+      sorter: (a, b) => a.id - b.id,
+      width: 70,
+    },
+    {
+      title: 'Total',
+      dataIndex: 'total',
+      render: (value) => formatUSD.format(value),
+      sorter: (a, b) => a.total - b.total,
+    },
+    {
+      title: 'Paid',
+      dataIndex: 'paid',
+      align: 'center',
+      render: (value) => (
+        <Tag color={value ? 'green' : 'red'} key={value}>
+          {value ? 'Paid'.toUpperCase() : 'Unpaid'.toUpperCase()}
+        </Tag>
+      ),
+      filters: [
+        { value: true, text: 'Paid' },
+        { value: false, text: 'Unpaid' },
+      ],
+      onFilter: (value, record) => record.paid === value,
+    },
+    {
+      title: 'Method',
+      dataIndex: 'paymentMethod',
+      align: 'center',
+      filters: paymentMethods,
+      onFilter: (value, record) => record.paymentMethod.indexOf(value) === 0,
+    },
+    {
+      title: 'Order Date',
+      dataIndex: 'orderDate',
+      render: (value) => formatDate(value),
+      sorter: (a, b) => new Date(a.orderDate) - new Date(b.orderDate),
+      width: 120,
+    },
+    {
+      title: 'Order Status',
+      dataIndex: 'orderStatus',
+      align: 'center',
+      filters: orderStatus,
+      onFilter: (value, record) => record.orderStatus.indexOf(value) === 0,
+    },
+    {
+      title: 'User Id',
+      dataIndex: 'userId',
+      render: (value) => <div className="w-16 md:w-24 lg:w-36 2xl:w-full truncate">{value}</div>,
+    },
+    {
+      title: 'Action',
+      align: 'center',
+      render: (_, record) => (
+        <Link to={`order-detail/${record.id}`}>
+          <Button>Detail</Button>
+        </Link>
+      ),
+    },
+  ]
+
   useEffect(() => {
-    if (!searchKey) {
-      setIsLoading(true)
-      orderService
-        .getOrders(currentPage, currentPageSize)
-        .then((res) => {
-          setOrders(res.data?.items)
-          setTotalItems(res.data?.totalItems)
+    searchKey ? setSearchLoading(true) : setIsLoading(true)
+    orderService
+      .getOrders(currentPage, currentPageSize, searchKey)
+      .then((res) => {
+        var newPaymentMethod = [
+          ...new Set(res.data?.items?.map((order) => order.paymentMethod)),
+        ].map((value) => {
+          return {
+            value: value,
+            text: value,
+          }
         })
-        .catch((err) => message.error(err.message))
-        .finally(() => setIsLoading(false))
-    } else {
-      orderService
-        .getOrders(currentPage, currentPageSize, searchKey)
-        .then((res) => {
-          setOrders(res.data?.items)
-          setTotalItems(res.data?.totalItems)
-        })
-        .catch((err) => message.error(err.message))
-        .finally(() => setSearchLoading(false))
-    }
+
+        var newOrderStatus = [...new Set(res.data?.items?.map((order) => order.orderStatus))].map(
+          (value) => {
+            return {
+              value: value,
+              text: value,
+            }
+          },
+        )
+
+        setPaymentMethods(newPaymentMethod)
+        setOrderStatus(newOrderStatus)
+
+        setOrders(res.data?.items)
+        setTotalItems(res.data?.totalItems)
+      })
+      .catch((err) => {
+        message.error(err.message)
+        setSearchKey('')
+      })
+      .finally(() => {
+        setIsLoading(false)
+        setSearchLoading(false)
+      })
   }, [setIsLoading, currentPage, currentPageSize, searchKey])
 
-  const handleSearch = (key) => {
-    setSearchKey(key)
-    if (!key) {
-      setSearchLoading(true)
-      orderService
-        .getOrders(currentPage, currentPageSize, key)
-        .then((res) => {
-          setOrders(res.data?.items)
-          setTotalItems(res.data?.totalItems)
-        })
-        .catch((err) => message.error(err.message))
-        .finally(() => setSearchLoading(false))
-    }
-  }
+  const handleSearch = (key) => key && key !== searchKey && setSearchKey(key)
 
   return (
     <>
@@ -76,66 +148,24 @@ export default function Orders() {
               allowClear
               loading={searchLoading}
               onSearch={(key) => handleSearch(key)}
+              onChange={(e) => e.target.value === '' && setSearchKey('')}
             />
-            <Button size="large" type="primary" className="bg-blue-500">
+            <Button size="large" type="primary">
               Export all order
             </Button>
           </div>
 
-          <div className="relative overflow-x-auto px-4">
-            <table className="w-full text-center text-sm rtl:text-right text-gray-700 dark:text-gray-400">
-              <thead className="text-sm whitespace-nowrap text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                <tr className="select-none">
-                  <th scope="col" className="p-2 text-left">
-                    Order ID
-                  </th>
-                  <th scope="col" className="p-2">
-                    Total
-                  </th>
-                  <th scope="col" className="p-2">
-                    Paid
-                  </th>
-                  <th scope="col" className="p-2">
-                    Payment Method
-                  </th>
-                  <th scope="col" className="p-2">
-                    Order Date
-                  </th>
-                  <th scope="col" className="p-2">
-                    Order Status
-                  </th>
-                  <th scope="col" className="p-2">
-                    User Id
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order, i) => (
-                  <tr key={i} className="bg-white border-t dark:bg-gray-800 dark:border-gray-700">
-                    <th
-                      scope="row"
-                      className="text-left py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                    >
-                      <Link to="order-detail" className="hover:text-blue-500">
-                        #{order.id}
-                      </Link>
-                    </th>
-                    <td className="py-4">{formatUSD.format(order.total)}</td>
-                    <td className="py-4 px-2">
-                      {order.paid ? 'Paid' : <span className="text-red-500 font-bold">Unpaid</span>}
-                    </td>
-                    <td className="py-4">{order.paymentMethod}</td>
-                    <td className="py-4 px-2 whitespace-nowrap">{formatDate(order.orderDate)}</td>
-                    <td className="py-4">{order.orderStatus}</td>
-                    <td className="py-4">#{order.userId}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            columns={columns}
+            dataSource={orders}
+            rowKey={(record) => record.id}
+            className="overflow-x-auto"
+            rowHoverable
+            pagination={false}
+          />
 
           <Pagination
-            className="text-center"
+            className="text-center mt-4"
             total={totalItems}
             showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
             defaultPageSize={currentPageSize}

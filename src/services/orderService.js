@@ -8,7 +8,10 @@ const getOrders = async (page, pageSize, keySearch) =>
     headers: authHeader(),
   })
 
+const getPaymentMethods = async () => await axios.get(API_URL + '/getPaymentMethods')
+
 const orderService = {
   getOrders,
+  getPaymentMethods,
 }
 export default orderService

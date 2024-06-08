@@ -36,6 +36,8 @@ export default function AddProduct() {
   const [previewImage, setPreviewImage] = useState('')
   const [fileList, setFileList] = useState([])
 
+  const [update, setUpdate] = useState(false)
+
   const handlePreview = async (file) => {
     if (!file.url && !file.preview) {
       file.preview = await getBase64(file.originFileObj)
@@ -117,6 +119,7 @@ export default function AddProduct() {
         setSizeList([])
         setFileList([])
         message.success('Successfully')
+        setUpdate(false)
       })
       .catch((err) => message.error(err.message))
       .finally(() => setLoading(false))
@@ -138,6 +141,7 @@ export default function AddProduct() {
         <Form
           form={form}
           disabled={loading}
+          onValuesChange={() => setUpdate(true)}
           onFinish={createProduct}
           className="grid gap-2 grid-cols-1 md:grid-cols-2"
         >
@@ -372,7 +376,17 @@ export default function AddProduct() {
                 />
               </Form.Item>
             </div>
-            <div className="flex space-x-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <Button
+                disabled={isEmptyObject(productAttributes) || loading || !update}
+                type="primary"
+                htmlType="submit"
+                className="w-full"
+                size="large"
+              >
+                {loading ? <Spin /> : 'Save'}
+              </Button>
+
               <ConfigProvider
                 theme={{
                   components: {
@@ -388,18 +402,9 @@ export default function AddProduct() {
                   className="w-full bg-gray-500"
                   size="large"
                 >
-                  Cancel
+                  Back
                 </Button>
               </ConfigProvider>
-              <Button
-                disabled={isEmptyObject(productAttributes)}
-                type="primary"
-                htmlType="submit"
-                className="w-full bg-blue-500"
-                size="large"
-              >
-                {loading ? <Spin /> : 'Save'}
-              </Button>
             </div>
           </div>
         </Form>

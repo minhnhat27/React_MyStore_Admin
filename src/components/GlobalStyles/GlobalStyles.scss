@@ -50,6 +50,6 @@ body.no-scroll {
   color: #1677ff;
 }
 
-.sidebar::-webkit-scrollbar {
-  display: none;
+table thead {
+  user-select: none;
 }

@@ -1,5 +1,4 @@
 import { useLoading } from '../../App'
-import Search from '../../components/Search'
 import { Button, Form, Input, Modal, Spin, message } from 'antd'
 import { useState } from 'react'
 import { DeleteTwoTone } from '@ant-design/icons'
@@ -83,30 +82,7 @@ export default function Sizes() {
           </div>
         </div>
         <div className="grid gap-2 grid-cols-1 md:grid-cols-3">
-          <div className="py-2 px-4 md:col-span-2 bg-white rounded-lg drop-shadow">
-            <span className="text-gray-600 text-sm">
-              Tip search by Size ID: Each size is provided with a unique ID, which you can rely on
-              to find the exact product you need.
-            </span>
-            <div className="py-4 text-sm flex items-center space-x-2">
-              <div className="flex items-center space-x-2">
-                <span className="hidden sm:block text-gray-500">Showing</span>
-                <select
-                  id="countries"
-                  className="bg-gray-50 border cursor-pointer outline-none w-fit border-gray-300 text-gray-900 text-sm rounded-lg block p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-                >
-                  <option value="10">10</option>
-                  <option value="20">20</option>
-                  <option value="30">30</option>
-                  <option value="50">50</option>
-                </select>
-              </div>
-              <div className="flex flex-1 items-center space-x-2">
-                <span className="hidden sm:block text-gray-500">entries</span>
-                <Search />
-              </div>
-            </div>
-
+          <div className="p-2 h-fit md:col-span-2 bg-white rounded-lg drop-shadow">
             <div className="relative overflow-x-auto px-4">
               <table className="w-full text-sm text-center min-w-fit rtl:text-right text-gray-700 dark:text-gray-400">
                 <thead className="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
@@ -184,7 +160,7 @@ export default function Sizes() {
                   />
                 </Form.Item>
               </div>
-              <Button type="primary" htmlType="submit" className="w-full bg-blue-500" size="large">
+              <Button type="primary" htmlType="submit" className="w-full" size="large">
                 {addSizeLoading ? <Spin /> : 'Save'}
               </Button>
             </Form>

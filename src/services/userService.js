@@ -29,18 +29,6 @@ export const isEmptyObject = (obj) => {
 export const formatDate = (isoDateStr) => {
   const date = new Date(isoDateStr)
   return date.toLocaleString('en-GB')
-
-  // // Lấy các thành phần ngày giờ
-  // const day = String(date.getDate()).padStart(2, '0')
-  // const month = String(date.getMonth() + 1).padStart(2, '0') // Tháng trong Date bắt đầu từ 0
-  // const year = date.getFullYear()
-
-  // const hours = String(date.getHours()).padStart(2, '0')
-  // const minutes = String(date.getMinutes()).padStart(2, '0')
-  // const seconds = String(date.getSeconds()).padStart(2, '0')
-
-  // // Định dạng lại chuỗi ngày giờ
-  // return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
 }
 
 export const getBase64 = (file) =>
@@ -51,7 +39,25 @@ export const getBase64 = (file) =>
     reader.onerror = (error) => reject(error)
   })
 
-export const toImageSrc = (base64) => `data:image/;base64,${base64}`
+// export const toImageSrc = (base64) => `data:image/;base64,${base64}`
+
+const API_IMG = 'https://localhost:7002/images'
+
+export const toProductImageUrl = (url) => API_IMG + `/Products/${url}`
+export const toBrandImageUrl = (url) => API_IMG + `/Brands/${url}`
+
+export const getFileFromUrl = async (url, filename) => {
+  try {
+    const response = await fetch(url)
+    const blob = await response.blob()
+    const f = filename.split('.')
+
+    return new File([blob], f[0], { type: f[1] })
+  } catch (error) {
+    console.error('Error fetch image:', error)
+    return null
+  }
+}
 
 export const transformDataToLabelValue = (data) => {
   return data.map((item) => ({
@@ -61,10 +67,14 @@ export const transformDataToLabelValue = (data) => {
   }))
 }
 
-export const gender = [{ value: 'Male' }, { value: 'Female' }, { value: 'Unisex' }]
+export const gender = [
+  { value: 'Male', text: 'Male' },
+  { value: 'Female', text: 'Female' },
+  { value: 'Unisex', text: 'Unisex' },
+]
 
 export function base64toFile(dataurl, filename) {
-  dataurl = toImageSrc(dataurl)
+  dataurl = `data:image/;base64,${dataurl}`
   var arr = dataurl.split(','),
     mime = arr[0].match(/:(.*?);/)[1],
     bstr = atob(arr[arr.length - 1]),

@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useLoading } from '../../App'
 import productService from '../../services/productService'
-import { Button, Image, Input, Pagination, Switch, message } from 'antd'
-import { toImageSrc } from '../../services/userService'
+import { Button, Image, Input, Pagination, Switch, Table, message } from 'antd'
+import { gender, toProductImageUrl } from '../../services/userService'
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons'
 
 export default function Products() {
@@ -17,27 +17,126 @@ export default function Products() {
   const [currentPage, setCurrentPage] = useState(1)
   const [currentPageSize, setCurrentPageSize] = useState(10)
 
+  const [brandNames, setBrandNames] = useState([])
+  const [categoryNames, setCategoryNames] = useState([])
+
+  const columns = [
+    {
+      title: 'ID',
+      dataIndex: 'id',
+      render: (value) => <span className="font-semibold">#{value}</span>,
+      sorter: (a, b) => a.id - b.id,
+      width: 70,
+    },
+    {
+      title: 'Image',
+      dataIndex: 'imageUrl',
+      render: (url) => (
+        <Image
+          width={80}
+          height={80}
+          className="object-contain"
+          src={toProductImageUrl(url)}
+          alt=""
+        />
+      ),
+    },
+    {
+      title: 'Product Name',
+      dataIndex: 'name',
+      sorter: (a, b) => a.name.localeCompare(b.name),
+    },
+    {
+      title: 'Gender',
+      dataIndex: 'gender',
+      filters: gender,
+      onFilter: (value, record) => record.gender.indexOf(value) === 0,
+    },
+    {
+      title: 'Brand',
+      dataIndex: 'brandName',
+      filters: brandNames,
+      onFilter: (value, record) => record.brandName.indexOf(value) === 0,
+    },
+    {
+      title: 'Category',
+      dataIndex: 'categoryName',
+      filters: categoryNames,
+      onFilter: (value, record) => record.categoryName.indexOf(value) === 0,
+    },
+    {
+      title: 'Sold',
+      dataIndex: 'sold',
+      align: 'center',
+      sorter: (a, b) => a.sold - b.sold,
+    },
+    {
+      title: 'Enable',
+      dataIndex: 'enable',
+      align: 'center',
+      filters: [
+        { value: true, text: 'Enable' },
+        { value: false, text: 'Not Enable' },
+      ],
+      onFilter: (value, record) => record.enable === value,
+      render: (value, record) => (
+        <Switch
+          checkedChildren={<CheckOutlined />}
+          unCheckedChildren={<CloseOutlined />}
+          defaultChecked={value}
+          onChange={(e) => handleChangeEnable(e, record.id)}
+          className="bg-gray-500"
+        />
+      ),
+    },
+    {
+      title: 'Action',
+      align: 'center',
+      render: (_, record) => (
+        <Link to={`product-detail/${record.id}`}>
+          <Button>Detail</Button>
+        </Link>
+      ),
+    },
+  ]
+
   useEffect(() => {
-    if (!searchKey) {
-      setIsLoading(true)
-      productService
-        .getProducts(currentPage, currentPageSize)
-        .then((res) => {
-          setProducts(res.data?.items)
-          setTotalItems(res.data?.totalItems)
+    searchKey ? setSearchLoading(true) : setIsLoading(true)
+    productService
+      .getProducts(currentPage, currentPageSize, searchKey)
+      .then((res) => {
+        var newBrandNames = [...new Set(res.data?.items?.map((order) => order.brandName))].map(
+          (value) => {
+            return {
+              value: value,
+              text: value,
+            }
+          },
+        )
+
+        var newcategoryNames = [
+          ...new Set(res.data?.items?.map((order) => order.categoryName)),
+        ].map((value) => {
+          return {
+            value: value,
+            text: value,
+          }
         })
-        .catch((err) => message.error(err.message))
-        .finally(() => setIsLoading(false))
-    } else {
-      productService
-        .getProducts(currentPage, currentPageSize, searchKey)
-        .then((res) => {
-          setProducts(res.data?.items)
-          setTotalItems(res.data?.totalItems)
-        })
-        .catch((err) => message.error(err.message))
-        .finally(() => setSearchLoading(false))
-    }
+
+        setBrandNames(newBrandNames)
+        setCategoryNames(newcategoryNames)
+
+        setProducts(res.data?.items)
+        setTotalItems(res.data?.totalItems)
+      })
+      .catch((err) => {
+        message.error(err.message)
+        setSearchKey('')
+      })
+      .finally(() => {
+        setIsLoading(false)
+        setSearchLoading(false)
+      })
   }, [setIsLoading, currentPage, currentPageSize, searchKey])
 
   const handleChangeEnable = (e, id) => {
@@ -53,20 +152,7 @@ export default function Products() {
     //.finally(() => setIsLoading(false))
   }
 
-  const handleSearch = (key) => {
-    setSearchKey(key)
-    if (!key) {
-      setSearchLoading(true)
-      productService
-        .getProducts(currentPage, currentPageSize, key)
-        .then((res) => {
-          setProducts(res.data?.items)
-          setTotalItems(res.data?.totalItems)
-        })
-        .catch((err) => message.error(err.message))
-        .finally(() => setSearchLoading(false))
-    }
-  }
+  const handleSearch = (key) => key && key !== searchKey && setSearchKey(key)
 
   return (
     <>
@@ -90,90 +176,24 @@ export default function Products() {
               allowClear
               loading={searchLoading}
               onSearch={(key) => handleSearch(key)}
+              onChange={(e) => e.target.value === '' && setSearchKey('')}
             />
-            <Button size="large" type="primary" className="bg-blue-500">
+            <Button size="large" type="primary">
               <Link to="add-product">+ Add new</Link>
             </Button>
           </div>
 
-          <div className="relative overflow-x-auto px-4">
-            <table className="w-full text-center text-sm rtl:text-right text-gray-700 dark:text-gray-400">
-              <thead className="text-sm whitespace-nowrap text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                <tr className="select-none">
-                  <th scope="col" className="p-2">
-                    ID
-                  </th>
-                  <th scope="col" className="p-2">
-                    Image
-                  </th>
-                  <th scope="col" className="p-2">
-                    Product Name
-                  </th>
-                  <th scope="col" className="p-2">
-                    Gender
-                  </th>
-                  <th scope="col" className="p-2">
-                    Brand
-                  </th>
-                  <th scope="col" className="p-2">
-                    Category
-                  </th>
-                  <th scope="col" className="p-2">
-                    Sold
-                  </th>
-                  <th scope="col" className="p-2">
-                    Enable
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product, i) => {
-                  return (
-                    <tr key={i} className="bg-white border-t dark:bg-gray-800 dark:border-gray-700">
-                      <th
-                        scope="row"
-                        className="py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                      >
-                        <Link to={`product-detail/${product.id}`} className="hover:text-blue-500">
-                          #{product.id}
-                        </Link>
-                      </th>
-                      <td className="py-2">
-                        <Image
-                          width={100}
-                          height={100}
-                          className="object-contain"
-                          src={toImageSrc(product.base64String)}
-                          alt=""
-                        />
-                      </td>
-                      <td className="py-2">
-                        <Link to={`product-detail/${product.id}`} className="hover:text-blue-500">
-                          {product.name}
-                        </Link>
-                      </td>
-                      <td className="py-2">{product.gender}</td>
-                      <td className="py-2">{product.brandName}</td>
-                      <td className="py-2">{product.categoryName}</td>
-                      <td className="py-2">{product.sold}</td>
-                      <td className="py-2">
-                        <Switch
-                          checkedChildren={<CheckOutlined />}
-                          unCheckedChildren={<CloseOutlined />}
-                          defaultChecked={product.enable}
-                          onChange={(e) => handleChangeEnable(e, product.id)}
-                          className="bg-gray-500"
-                        />
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            columns={columns}
+            dataSource={products}
+            rowKey={(record) => record.id}
+            className="overflow-x-auto"
+            rowHoverable
+            pagination={false}
+          />
 
           <Pagination
-            className="text-center"
+            className="text-center mt-4"
             total={totalItems}
             showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
             defaultPageSize={currentPageSize}
