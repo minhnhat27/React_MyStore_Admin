@@ -19,7 +19,7 @@ input::-webkit-inner-spin-button {
 
 body {
   line-height: 1.5;
-  background-color: #efefef;
+  //background-color: #efefef;
   text-rendering: optimizeSpeed;
   &::-webkit-scrollbar {
     width: 5px;
@@ -33,6 +33,21 @@ body {
     border-radius: 10px;
   }
 }
+
+div {
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: white;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #cccccc;
+    border-radius: 10px;
+  }
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -52,4 +67,5 @@ body.no-scroll {
 
 table thead {
   user-select: none;
+  white-space: nowrap;
 }

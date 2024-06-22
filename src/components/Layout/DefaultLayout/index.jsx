@@ -2,7 +2,7 @@ import Header from '../Header'
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { Layout, Menu } from 'antd'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { navigateItems } from '../../../services/routes'
+import { navigateItems } from '../../../routes'
 import { useAuth } from '../../../App'
 
 const { Sider, Content } = Layout

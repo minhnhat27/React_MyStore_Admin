@@ -23,7 +23,7 @@ import {
   transformDataToLabelValue,
   isEmptyObject,
   toProductImageUrl,
-} from '../../services/userService'
+} from '../../services/commonService'
 import { useLoading } from '../../App'
 import { useNavigate, useParams } from 'react-router-dom'
 
@@ -164,7 +164,7 @@ export default function ProductDetail() {
         message.success('Success')
         setUpdate(false)
       })
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => setUpdateLoading(false))
   }
 
@@ -176,7 +176,7 @@ export default function ProductDetail() {
         navigate(-1)
         message.success('Success')
       })
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => {
         setOpen(false)
         setDeleteLoading(false)
@@ -188,13 +188,11 @@ export default function ProductDetail() {
       <Modal
         title={`Confirm delete product #${productId}`}
         open={open}
-        closable={false}
         onOk={confirmDelete}
         onCancel={() => setOpen(false)}
         okText={deleteLoading ? <Spin /> : 'OK'}
         okType="danger"
         okButtonProps={{ disabled: deleteLoading, type: 'primary' }}
-        cancelText="Cancel"
         cancelButtonProps={{ disabled: deleteLoading }}
       >
         <p>Are you sure you want to delete this product?</p>

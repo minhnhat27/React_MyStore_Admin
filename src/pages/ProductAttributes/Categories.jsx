@@ -22,7 +22,7 @@ export default function Category() {
     productService
       .getCategories()
       .then((res) => setCategories(res.data))
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => setIsLoading(false))
   }, [update, setIsLoading])
 
@@ -35,7 +35,7 @@ export default function Category() {
         setUpdate(!update)
         message.success('Successfully')
       })
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => setAddCategoryLoading(false))
   }
 
@@ -47,7 +47,7 @@ export default function Category() {
         setUpdate(!update)
         message.success('Successfully')
       })
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => {
         setOpen(false)
         setDeleteLoading(false)
@@ -56,9 +56,8 @@ export default function Category() {
   return (
     <>
       <Modal
-        title={`Confirm delete category ${categoryDelete.name}`}
+        title={`Confirm delete ${categoryDelete.name} category`}
         open={open}
-        closable={false}
         onOk={confirmDelete}
         onCancel={() => {
           setOpen(false)
@@ -66,8 +65,7 @@ export default function Category() {
         }}
         okText={deleteLoading ? <Spin /> : 'OK'}
         okType="danger"
-        okButtonProps={{ disabled: deleteLoading }}
-        cancelText="Cancel"
+        okButtonProps={{ disabled: deleteLoading, type: 'primary' }}
         cancelButtonProps={{ disabled: deleteLoading }}
       >
         <p>Are you sure you want to delete this category?</p>

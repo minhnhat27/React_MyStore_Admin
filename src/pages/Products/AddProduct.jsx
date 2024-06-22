@@ -20,7 +20,7 @@ import {
   getBase64,
   isEmptyObject,
   transformDataToLabelValue,
-} from '../../services/userService'
+} from '../../services/commonService'
 import { useLoading } from '../../App'
 import { useNavigate } from 'react-router-dom'
 
@@ -58,7 +58,7 @@ export default function AddProduct() {
           setSize(data.sizes)
         }
       })
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => setIsLoading(false))
   }, [setIsLoading])
 
@@ -121,7 +121,7 @@ export default function AddProduct() {
         message.success('Successfully')
         setUpdate(false)
       })
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => setLoading(false))
   }
 

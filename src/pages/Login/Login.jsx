@@ -28,16 +28,7 @@ export default function Login() {
         dispatch(authActions.LOGIN)
         navigate('/')
       })
-      .catch((err) => {
-        err.response
-          ? form.setFields([
-              {
-                name: 'password',
-                errors: ['Invalid username or password'],
-              },
-            ])
-          : message.error(err.message)
-      })
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => setLoading(false))
   }
 

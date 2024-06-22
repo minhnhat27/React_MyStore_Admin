@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useLoading } from '../../App'
 import { useEffect, useState } from 'react'
 import orderService from '../../services/orderService'
-import { formatDate, formatUSD } from '../../services/userService'
+import { formatDate, formatUSD } from '../../services/commonService'
 import { Button, Input, Pagination, Table, Tag, message } from 'antd'
 
 export default function Orders() {
@@ -24,7 +24,6 @@ export default function Orders() {
       title: 'ID',
       dataIndex: 'id',
       render: (value) => <span className="font-semibold">#{value}</span>,
-      sorter: (a, b) => a.id - b.id,
       width: 70,
     },
     {
@@ -58,7 +57,7 @@ export default function Orders() {
     {
       title: 'Order Date',
       dataIndex: 'orderDate',
-      render: (value) => formatDate(value),
+      render: (value) => value !== null && formatDate(value),
       sorter: (a, b) => new Date(a.orderDate) - new Date(b.orderDate),
       width: 120,
     },
@@ -115,7 +114,7 @@ export default function Orders() {
         setTotalItems(res.data?.totalItems)
       })
       .catch((err) => {
-        message.error(err.message)
+        message.error(err.response.data ?? err.message)
         setSearchKey('')
       })
       .finally(() => {

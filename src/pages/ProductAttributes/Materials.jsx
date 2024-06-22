@@ -22,7 +22,7 @@ export default function Materials() {
     productService
       .getMaterials()
       .then((res) => setMaterials(res.data))
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => setIsLoading(false))
   }, [update, setIsLoading])
 
@@ -35,7 +35,7 @@ export default function Materials() {
         setUpdate(!update)
         message.success('Successfully')
       })
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => setAddMaterialLoading(false))
   }
 
@@ -47,7 +47,7 @@ export default function Materials() {
         setUpdate(!update)
         message.success('Successfully')
       })
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => {
         setOpen(false)
         setDeleteLoading(false)
@@ -56,9 +56,8 @@ export default function Materials() {
   return (
     <>
       <Modal
-        title={`Confirm delete material ${materialDelete.name}`}
+        title={`Confirm delete ${materialDelete.name} material`}
         open={open}
-        closable={false}
         onOk={confirmDelete}
         onCancel={() => {
           setOpen(false)
@@ -66,8 +65,7 @@ export default function Materials() {
         }}
         okText={deleteLoading ? <Spin /> : 'OK'}
         okType="danger"
-        okButtonProps={{ disabled: deleteLoading }}
-        cancelText="Cancel"
+        okButtonProps={{ disabled: deleteLoading, type: 'primary' }}
         cancelButtonProps={{ disabled: deleteLoading }}
       >
         <p>Are you sure you want to delete this material?</p>

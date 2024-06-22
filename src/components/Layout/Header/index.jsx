@@ -1,11 +1,10 @@
-import Tippy from '@tippyjs/react/headless'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../App'
 import authActions from '../../../services/authAction'
 
 import logo from '../../../logo.png'
 import authService from '../../../services/authService'
-import { Avatar, Badge, Button } from 'antd'
+import { Avatar, Badge, Button, Dropdown, Modal } from 'antd'
 import {
   UserOutlined,
   MessageTwoTone,
@@ -22,6 +21,18 @@ export default function Header({ collapsed, toggleCollapsed }) {
   const [user, setUser] = useState({})
 
   const [darkMode, setDarkMode] = useState(false)
+
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const showModal = () => setIsModalOpen(true)
+
+  const handleOk = () => {
+    setIsModalOpen(false)
+    authService.logout()
+    dispatch(authActions.LOGOUT)
+    navigate('/login')
+  }
+  const handleCancel = () => setIsModalOpen(false)
 
   useEffect(() => {
     const savedDarkMode = localStorage.getItem('isDarkMode')
@@ -52,14 +63,30 @@ export default function Header({ collapsed, toggleCollapsed }) {
     localStorage.setItem('isDarkMode', !darkMode)
   }
 
-  const logout = () => {
-    authService.logout()
-    dispatch(authActions.LOGOUT)
-    navigate('/login')
-  }
+  const items = [
+    {
+      label: <Link to="/profile">Profile</Link>,
+      key: '0',
+    },
+    {
+      label: <Link to="/settings">Settings</Link>,
+      key: '1',
+    },
+    {
+      type: 'divider',
+    },
+    {
+      label: 'Log out',
+      key: '3',
+      onClick: showModal,
+    },
+  ]
 
   return (
     <>
+      <Modal title="Log Out" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
+        <p>Are you sure you want to log out?</p>
+      </Modal>
       <nav className="bg-white sticky top-0 z-20 border-b border-gray-200 dark:bg-gray-900">
         <div className="max-w-screen-xl px-2 space-x-2 h-20 flex flex-nowrap items-center">
           <Button
@@ -92,53 +119,7 @@ export default function Header({ collapsed, toggleCollapsed }) {
               />
             </div>
             {state.isAuthenticated ? (
-              <Tippy
-                interactive
-                placement="bottom"
-                trigger="click"
-                render={(attrs) => (
-                  <div
-                    {...attrs}
-                    tabIndex={-1}
-                    className="w-48 z-50 text-base list-none bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600"
-                  >
-                    <ul className="py-2">
-                      <li>
-                        <Link
-                          to="#"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
-                        >
-                          Dashboard
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          to="#"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
-                        >
-                          Settings
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          to="#"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
-                        >
-                          Earnings
-                        </Link>
-                      </li>
-                      <li>
-                        <button
-                          onClick={logout}
-                          className="block w-full text-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
-                        >
-                          Log out
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
-                )}
-              >
+              <Dropdown menu={{ items }} trigger={['click']}>
                 <div className="flex items-center cursor-pointer space-x-2">
                   <img className="w-8 h-8 rounded-full ring-1" src={logo} alt="user" />
                   <div className="w-16 sm:w-full">
@@ -150,7 +131,7 @@ export default function Header({ collapsed, toggleCollapsed }) {
                     </span>
                   </div>
                 </div>
-              </Tippy>
+              </Dropdown>
             ) : (
               <Avatar icon={<UserOutlined />} />
             )}

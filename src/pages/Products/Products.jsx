@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useLoading } from '../../App'
 import productService from '../../services/productService'
 import { Button, Image, Input, Pagination, Switch, Table, message } from 'antd'
-import { gender, toProductImageUrl } from '../../services/userService'
+import { gender, toProductImageUrl } from '../../services/commonService'
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons'
 
 export default function Products() {
@@ -25,7 +25,6 @@ export default function Products() {
       title: 'ID',
       dataIndex: 'id',
       render: (value) => <span className="font-semibold">#{value}</span>,
-      sorter: (a, b) => a.id - b.id,
       width: 70,
     },
     {
@@ -130,7 +129,7 @@ export default function Products() {
         setTotalItems(res.data?.totalItems)
       })
       .catch((err) => {
-        message.error(err.message)
+        message.error(err.response.data || err.message)
         setSearchKey('')
       })
       .finally(() => {
@@ -148,7 +147,7 @@ export default function Products() {
     productService
       .updateProductEnable(data)
       .then(() => message.success('Success'))
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
     //.finally(() => setIsLoading(false))
   }
 

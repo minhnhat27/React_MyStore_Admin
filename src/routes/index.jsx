@@ -2,6 +2,7 @@ import { Route } from 'react-router-dom'
 import { Fragment } from 'react'
 
 import DefaultLayout from '../components/Layout/DefaultLayout'
+import NotFound from '../components/NotFound'
 import Home from '../pages/Home'
 import Login from '../pages/Login'
 import Products from '../pages/Products'
@@ -18,19 +19,21 @@ import Users from '../pages/Users'
 import {
   ContainerOutlined,
   LoginOutlined,
-  DesktopOutlined,
-  MailOutlined,
   PieChartOutlined,
+  UserOutlined,
+  ProductOutlined,
+  DeploymentUnitOutlined,
 } from '@ant-design/icons'
+
 export const navigateItems = [
   { key: '/', icon: <PieChartOutlined />, label: 'Dashboard' },
-  { key: '/orders-management', icon: <DesktopOutlined />, label: 'Orders' },
-  { key: '/products-management', icon: <ContainerOutlined />, label: 'Products' },
-  { key: '/users-management', icon: <ContainerOutlined />, label: 'Users' },
+  { key: '/orders-management', icon: <ContainerOutlined />, label: 'Orders' },
+  { key: '/products-management', icon: <ProductOutlined />, label: 'Products' },
+  { key: '/users-management', icon: <UserOutlined />, label: 'Users' },
   {
     key: 'sub1',
     label: 'Product Attributes',
-    icon: <MailOutlined />,
+    icon: <DeploymentUnitOutlined />,
     children: [
       { key: '/brands-management', label: 'Brands' },
       { key: '/categories-management', label: 'Categories' },
@@ -58,6 +61,8 @@ export const publicRoutes = [
   { path: '/categories-management', component: Category },
   { path: '/materials-management', component: Materials },
   { path: '/sizes-management', component: Sizes },
+
+  { path: '*', component: NotFound },
 ]
 
 export const privateRoutes = []

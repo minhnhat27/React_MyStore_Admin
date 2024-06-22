@@ -22,7 +22,7 @@ export default function Sizes() {
     productService
       .getSizes()
       .then((res) => setSizes(res.data))
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => setIsLoading(false))
   }, [update, setIsLoading])
 
@@ -35,7 +35,7 @@ export default function Sizes() {
         setUpdate(!update)
         message.success('Successfully')
       })
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => setAddSizeLoading(false))
   }
 
@@ -47,7 +47,7 @@ export default function Sizes() {
         setUpdate(!update)
         message.success('Successfully')
       })
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => {
         setOpen(false)
         setDeleteLoading(false)
@@ -56,9 +56,8 @@ export default function Sizes() {
   return (
     <>
       <Modal
-        title={`Confirm delete Size ${sizeDelete.name}`}
+        title={`Confirm delete ${sizeDelete.name} size`}
         open={open}
-        closable={false}
         onOk={confirmDelete}
         onCancel={() => {
           setOpen(false)
@@ -66,8 +65,7 @@ export default function Sizes() {
         }}
         okText={deleteLoading ? <Spin /> : 'OK'}
         okType="danger"
-        okButtonProps={{ disabled: deleteLoading }}
-        cancelText="Cancel"
+        okButtonProps={{ disabled: deleteLoading, type: 'primary' }}
         cancelButtonProps={{ disabled: deleteLoading }}
       >
         <p>Are you sure you want to delete this Size?</p>

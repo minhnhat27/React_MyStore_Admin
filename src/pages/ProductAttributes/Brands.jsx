@@ -1,5 +1,5 @@
 import { Button, Form, Image, Input, Modal, Spin, Upload, message } from 'antd'
-import { getBase64, toBrandImageUrl } from '../../services/userService'
+import { getBase64, toBrandImageUrl } from '../../services/commonService'
 import { useState } from 'react'
 import { PlusOutlined, DeleteTwoTone } from '@ant-design/icons'
 import productService from '../../services/productService'
@@ -26,7 +26,7 @@ export default function Brand() {
     productService
       .getBrands()
       .then((res) => setBrands(res.data))
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => setIsLoading(false))
   }, [update, setIsLoading])
 
@@ -53,7 +53,7 @@ export default function Brand() {
         setUpdate(!update)
         message.success('Successfully')
       })
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => setAddBrandLoading(false))
   }
 
@@ -65,7 +65,7 @@ export default function Brand() {
         setUpdate(!update)
         message.success('Success')
       })
-      .catch((err) => message.error(err.message))
+      .catch((err) => message.error(err.response.data || err.message))
       .finally(() => {
         setOpen(false)
         setDeleteLoading(false)
@@ -75,9 +75,8 @@ export default function Brand() {
   return (
     <>
       <Modal
-        title={`Confirm delete brand ${brandDelete.name}`}
+        title={`Confirm delete ${brandDelete.name} brand`}
         open={open}
-        closable={false}
         onOk={confirmDelete}
         onCancel={() => {
           setOpen(false)
@@ -86,7 +85,6 @@ export default function Brand() {
         okText={deleteLoading ? <Spin /> : 'OK'}
         okType="danger"
         okButtonProps={{ disabled: deleteLoading, type: 'primary' }}
-        cancelText="Cancel"
         cancelButtonProps={{ disabled: deleteLoading }}
       >
         <p>Are you sure you want to delete this brand?</p>

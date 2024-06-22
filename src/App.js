@@ -1,9 +1,8 @@
 import { reducer, initialState } from './services/authReducer'
-import { GenerateRoutes, privateRoutes, publicRoutes } from './services/routes'
-import NotFound from './components/NotFound'
+import { GenerateRoutes, privateRoutes, publicRoutes } from './routes'
 
 import { createContext, useContext, useReducer, useState } from 'react'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
+import { BrowserRouter as Router, Routes } from 'react-router-dom'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 
 import { ReactNotifications } from 'react-notifications-component'
@@ -25,7 +24,6 @@ function App() {
               <Routes>
                 {GenerateRoutes(publicRoutes)}
                 {state.isAuthenticated && GenerateRoutes(privateRoutes)}
-                <Route path="*" element={<NotFound />} />
               </Routes>
             </div>
           </Router>
