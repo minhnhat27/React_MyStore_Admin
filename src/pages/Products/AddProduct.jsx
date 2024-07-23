@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import {
+  Breadcrumb,
   Button,
+  Card,
   ConfigProvider,
   Form,
   Image,
@@ -10,27 +12,43 @@ import {
   Spin,
   Switch,
   Upload,
-  message,
 } from 'antd'
 import TextArea from 'antd/es/input/TextArea'
 import { CheckOutlined, CloseOutlined, PlusOutlined } from '@ant-design/icons'
-import productService from '../../services/productService'
+import productService from '../../services/products/productService'
 import {
   gender,
   getBase64,
   isEmptyObject,
+  itemRender,
+  showError,
+  sizes,
   transformDataToLabelValue,
 } from '../../services/commonService'
-import { useLoading } from '../../App'
+import { useAntdMessage } from '../../App'
 import { useNavigate } from 'react-router-dom'
+
+const breadcrumbItems = [
+  {
+    path: '/products-management',
+    title: 'Products',
+  },
+  {
+    title: 'Add New',
+  },
+]
 
 export default function AddProduct() {
   const navigate = useNavigate()
-  const { setIsLoading } = useLoading()
+  const { showMessage } = useAntdMessage()
+
   const [productAttributes, setProductAttributes] = useState({})
   const [size, setSize] = useState([])
   const [form] = Form.useForm()
+
   const [loading, setLoading] = useState(false)
+  const [saveLoading, setSaveLoading] = useState(false)
+
   const [sizeList, setSizeList] = useState([])
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewImage, setPreviewImage] = useState('')
@@ -48,343 +66,299 @@ export default function AddProduct() {
   const handleChangeFile = ({ fileList: newFileList }) => setFileList(newFileList)
 
   useEffect(() => {
-    setIsLoading(true)
+    setLoading(true)
     productService
       .fetchProductAttributes()
       .then((data) => {
-        if (data) {
-          Object.keys(data).forEach((key) => (data[key] = transformDataToLabelValue(data[key])))
-          setProductAttributes(data)
-          setSize(data.sizes)
-        }
+        Object.keys(data).forEach((key) => (data[key] = transformDataToLabelValue(data[key])))
+        setProductAttributes(data)
+        setSize(sizes)
       })
-      .catch((err) => message.error(err.response.data || err.message))
-      .finally(() => setIsLoading(false))
-  }, [setIsLoading])
+      .catch((err) => showMessage.error(showError(err)))
+      .finally(() => setLoading(false))
+  }, [showMessage])
 
   const handleSelectSize = (value) => {
-    var items = []
-    value.forEach((item) => {
-      const t = size.find((e) => e.value === item)
-      items.push(t)
-    })
+    var items = value.map((item) => ({
+      sizeId: size.find((e) => e.value === item)?.value,
+    }))
     setSizeList(items)
   }
-  const handleSetSizeValue = (id, opt) => {
-    const newList = sizeList.map((item) => {
-      if (item.value === id) {
-        return { ...item, opt: { ...item.opt, ...opt } }
-      }
-      return item
-    })
+
+  const handleSetSizeValue = (obj) => {
+    const newList = sizeList.map((item) =>
+      item.sizeId === obj.sizeId ? { ...item, ...obj } : item,
+    )
     setSizeList(newList)
   }
 
   const createProduct = () => {
-    setLoading(true)
-    const newSizeList = sizeList.map((item) => {
-      return {
-        id: item.value,
-        ...item.opt,
-        discount: item.opt.discount ?? 0,
+    try {
+      setSaveLoading(true)
+      const formData = new FormData()
+
+      const newSizeList = sizeList.map((item) => ({
+        ...item,
+        discountPercent: item.discountPercent ?? 0,
+      }))
+      fileList.forEach((item, i) => formData.append(`images[${i}]`, item.originFileObj))
+
+      newSizeList.forEach((item, i) =>
+        Object.keys(item).forEach((key) =>
+          formData.append(`sizesAndQuantities[${i}].${key}`, item[key]),
+        ),
+      )
+      const data = {
+        ...form.getFieldsValue(),
+        enable: form.getFieldValue('enable') ?? true,
+        description: form.getFieldValue('description') ?? '',
       }
-    })
+      delete data.imageUrls
+      delete data.sizeIds
 
-    const formData = new FormData()
-    fileList.forEach((item, i) => formData.append(`images[${i}]`, item.originFileObj))
+      data.materialIds.forEach((item, i) => formData.append(`materialIds[${i}]`, item))
+      delete data.materials
 
-    newSizeList.forEach((item, i) => {
-      Object.keys(item).forEach((key) => {
-        formData.append(`sizes[${i}].${key}`, item[key])
-      })
-    })
+      Object.keys(data).forEach((key) => formData.append(key, data[key]))
 
-    const data = {
-      ...form.getFieldsValue(),
-      enable: form.getFieldValue('enable') ?? true,
-      description: form.getFieldValue('description') ?? '',
+      productService
+        .create(formData)
+        .then(() => {
+          form.resetFields()
+          setSizeList([])
+          setFileList([])
+          showMessage.success('Successfully')
+          setUpdate(false)
+        })
+        .catch((err) => showMessage.error(err.response?.data || err.message))
+        .finally(() => setSaveLoading(false))
+    } catch (error) {
+      console.log(error)
     }
-    delete data.images
-    delete data.sizes
+  }
 
-    data.materials.forEach((item, i) => formData.append(`materials[${i}]`, item))
-    delete data.materials
-
-    Object.keys(data).forEach((key) => formData.append(key, data[key]))
-
-    productService
-      .createProduct(formData)
-      .then(() => {
-        form.resetFields()
-        setSizeList([])
-        setFileList([])
-        message.success('Successfully')
-        setUpdate(false)
-      })
-      .catch((err) => message.error(err.response.data || err.message))
-      .finally(() => setLoading(false))
+  const handleClear = () => {
+    form.resetFields()
+    setSizeList([])
+    setFileList([])
+    setUpdate(false)
   }
 
   return (
     <>
       <div className="pb-4">
-        <div className="flex justify-between items-center py-5">
-          <div className="text-2xl font-bold">Add Product</div>
-          <div className="space-x-2 text-sm">
-            <span>Dashboard</span>
-            <span>{'>'}</span>
-            <span>Products List</span>
-            <span>{'>'}</span>
-            <span className="text-gray-500">New Product</span>
-          </div>
-        </div>
+        <Breadcrumb className="py-2" itemRender={itemRender} items={breadcrumbItems} />
         <Form
           form={form}
-          disabled={loading}
+          disabled={saveLoading}
           onValuesChange={() => setUpdate(true)}
           onFinish={createProduct}
-          className="grid gap-2 grid-cols-1 md:grid-cols-2"
+          layout="vertical"
+          className="grid gap-3 grid-cols-1 md:grid-cols-2"
         >
-          <div className="p-4 bg-white rounded-lg drop-shadow space-y-2 h-fit">
-            <div>
-              <label
-                htmlFor="product_name"
-                className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-              >
-                Product name <span className="text-red-500 font-bold text-lg">*</span>
-              </label>
-              <Form.Item
-                name="name"
-                rules={[{ required: true, message: 'Product name is required' }]}
-              >
-                <Input
-                  count={{
-                    show: true,
-                    max: 50,
-                  }}
-                  maxLength={50}
-                  size="large"
-                  placeholder="Product name..."
-                />
-              </Form.Item>
-            </div>
+          <Card className="drop-shadow h-fit">
+            <Form.Item
+              label="Name"
+              name="name"
+              rules={[{ required: true, message: 'Product name is required' }]}
+            >
+              <Input
+                count={{
+                  show: true,
+                  max: 50,
+                }}
+                maxLength={50}
+                size="large"
+                placeholder="Product name..."
+              />
+            </Form.Item>
             <div className="grid gap-2 md:grid-cols-3">
-              <div>
-                <label
-                  htmlFor="brand"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Brand <span className="text-red-500 font-bold text-lg">*</span>
-                </label>
-                <Form.Item name="brand" rules={[{ required: true, message: 'Brand is required' }]}>
-                  <Select
-                    className="w-full"
-                    size="large"
-                    optionFilterProp="label"
-                    placeholder="Choose brand"
-                    options={productAttributes.brands}
-                  />
-                </Form.Item>
-              </div>
-              <div>
-                <label
-                  htmlFor="category"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Category <span className="text-red-500 font-bold text-lg">*</span>
-                </label>
-                <Form.Item
-                  name="category"
-                  rules={[{ required: true, message: 'Category is required' }]}
-                >
-                  <Select
-                    className="w-full"
-                    size="large"
-                    optionFilterProp="label"
-                    placeholder="Choose category"
-                    options={productAttributes.categories}
-                  />
-                </Form.Item>
-              </div>
-              <div>
-                <label
-                  htmlFor="gender"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Gender <span className="text-red-500 font-bold text-lg">*</span>
-                </label>
-                <Form.Item
-                  name="gender"
-                  rules={[{ required: true, message: 'Gender is required' }]}
-                >
-                  <Select
-                    className="w-full"
-                    size="large"
-                    optionFilterProp="label"
-                    placeholder="Choose gender"
-                    options={gender}
-                  />
-                </Form.Item>
-              </div>
-            </div>
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Material <span className="text-red-500 font-bold text-lg">*</span>
-              </label>
               <Form.Item
-                name="materials"
-                rules={[{ required: true, message: 'Materials is required' }]}
+                label="Brand"
+                name="brandId"
+                rules={[{ required: true, message: 'Brand is required' }]}
               >
                 <Select
-                  className="w-full"
-                  mode="multiple"
-                  size="large"
-                  optionFilterProp="label"
-                  placeholder="Choose materials"
-                  options={productAttributes.materials}
-                />
-              </Form.Item>
-            </div>
-
-            <div>
-              <label
-                htmlFor="description "
-                className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-              >
-                Description
-              </label>
-              <Form.Item name="description">
-                <TextArea
-                  id="description"
-                  rows={3}
-                  count={{ show: true, max: 500 }}
-                  placeholder="Product description..."
-                  maxLength={500}
-                />
-              </Form.Item>
-            </div>
-          </div>
-          <div className="p-4 bg-white rounded-lg drop-shadow space-y-2 h-fit">
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Upload images <span className="text-red-500 font-bold text-lg">*</span>
-              </label>
-              <Form.Item
-                name="images"
-                extra="Pay attention to the quality of the pictures you add, comply with the background
-                color standards. Pictures must be in certain dimensions. Notice that the product
-                shows all the details"
-                rules={[{ required: true, message: 'Minimun 1 image' }]}
-                getValueFromEvent={(e) => e.fileList}
-              >
-                <Upload
-                  maxCount={9}
-                  beforeUpload={() => false}
-                  listType="picture-card"
-                  fileList={fileList}
-                  accept="image/png, image/gif, image/jpeg, image/svg"
-                  multiple
-                  onPreview={handlePreview}
-                  onChange={handleChangeFile}
-                >
-                  {fileList.length >= 9 ? null : (
-                    <button type="button">
-                      <PlusOutlined />
-                      <div>Upload</div>
-                    </button>
-                  )}
-                </Upload>
-              </Form.Item>
-              {previewImage && (
-                <Image
-                  wrapperStyle={{
-                    display: 'none',
-                  }}
-                  preview={{
-                    visible: previewOpen,
-                    onVisibleChange: (visible) => setPreviewOpen(visible),
-                    afterOpenChange: (visible) => !visible && setPreviewImage(''),
-                  }}
-                  src={previewImage}
-                />
-              )}
-            </div>
-
-            <div>
-              <label
-                htmlFor="size"
-                className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-              >
-                Add size <span className="text-red-500 font-bold text-lg">*</span>
-              </label>
-              <Form.Item name="sizes" rules={[{ required: true, message: 'Size is required' }]}>
-                <Select
+                  loading={loading}
                   className="w-full"
                   size="large"
                   optionFilterProp="label"
-                  placeholder="Add size"
-                  onChange={handleSelectSize}
-                  options={size}
-                  autoClearSearchValue
-                  mode="multiple"
+                  placeholder="Choose brand"
+                  options={productAttributes.brands}
                 />
               </Form.Item>
-            </div>
-            {sizeList.map((item, i) => (
-              <div key={i} className="grid gap-2 grid-cols-5">
-                <Button size="large">{item.label}</Button>
-                <Input
-                  required
-                  size="large"
-                  onChange={(e) => handleSetSizeValue(item.value, { quantity: e.target.value })}
-                  type="number"
-                  placeholder="Quantity..."
-                />
-                <InputNumber
-                  required
-                  size="large"
-                  className="w-full col-span-2"
-                  formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
-                  onChange={(value) => handleSetSizeValue(item.value, { price: value })}
-                  placeholder="Price..."
-                />
-
-                <InputNumber
-                  size="large"
-                  min={0}
-                  max={100}
+              <Form.Item
+                label="Category"
+                name="categoryId"
+                rules={[{ required: true, message: 'Category is required' }]}
+              >
+                <Select
+                  loading={loading}
                   className="w-full"
-                  formatter={(value) => `${value}%`}
-                  parser={(value) => value?.replace('%', '')}
-                  onChange={(value) => handleSetSizeValue(item.value, { discount: value })}
-                  placeholder="Discount..."
+                  size="large"
+                  optionFilterProp="label"
+                  placeholder="Choose category"
+                  options={productAttributes.categories}
                 />
-              </div>
-            ))}
-
-            <div className="flex space-x-2">
-              <label className="block text-sm font-medium text-gray-900 dark:text-white">
-                Enable
-              </label>
-              <Form.Item name="enable" valuePropName="checked">
-                <Switch
-                  checkedChildren={<CheckOutlined />}
-                  unCheckedChildren={<CloseOutlined />}
-                  defaultChecked
-                  className="bg-gray-500"
+              </Form.Item>
+              <Form.Item
+                label="Gender"
+                name="gender"
+                rules={[{ required: true, message: 'Gender is required' }]}
+              >
+                <Select
+                  className="w-full"
+                  size="large"
+                  placeholder="Choose gender"
+                  options={gender}
                 />
               </Form.Item>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <Form.Item
+              label="Material"
+              name="materialIds"
+              rules={[{ required: true, message: 'Materials is required' }]}
+            >
+              <Select
+                loading={loading}
+                className="w-full"
+                mode="multiple"
+                size="large"
+                optionFilterProp="label"
+                placeholder="Choose materials"
+                options={productAttributes.materials}
+              />
+            </Form.Item>
+            <Form.Item label="Description" name="description">
+              <TextArea
+                id="description"
+                rows={6}
+                count={{ show: true, max: 500 }}
+                placeholder="Product description..."
+                maxLength={500}
+              />
+            </Form.Item>
+          </Card>
+          <Card className="drop-shadow">
+            <Form.Item
+              label="Upload Images"
+              name="imageUrls"
+              rules={[{ required: true, message: 'Minimun 1 image' }]}
+              getValueFromEvent={(e) => e.fileList}
+            >
+              <Upload
+                maxCount={9}
+                beforeUpload={() => false}
+                listType="picture-card"
+                fileList={fileList}
+                accept="image/png, image/gif, image/jpeg, image/svg"
+                multiple
+                onPreview={handlePreview}
+                onChange={handleChangeFile}
+              >
+                {fileList.length >= 9 ? null : (
+                  <button type="button">
+                    <PlusOutlined />
+                    <div>Upload</div>
+                  </button>
+                )}
+              </Upload>
+            </Form.Item>
+            {previewImage && (
+              <Image
+                wrapperStyle={{
+                  display: 'none',
+                }}
+                preview={{
+                  visible: previewOpen,
+                  onVisibleChange: (visible) => setPreviewOpen(visible),
+                  afterOpenChange: (visible) => !visible && setPreviewImage(''),
+                }}
+                src={previewImage}
+              />
+            )}
+            <Form.Item
+              label="Price"
+              name="price"
+              rules={[{ required: true, message: 'Price is required' }]}
+            >
+              <InputNumber
+                size="large"
+                className="w-full col-span-2"
+                formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
+                placeholder="Price..."
+              />
+            </Form.Item>
+            <Form.Item
+              label="Add size"
+              name="sizeIds"
+              rules={[{ required: true, message: 'Size is required' }]}
+              className="space-y-2"
+            >
+              <Select
+                className="w-full"
+                size="large"
+                optionFilterProp="label"
+                placeholder="Add size"
+                onChange={handleSelectSize}
+                options={sizes}
+                autoClearSearchValue
+                mode="multiple"
+              />
+            </Form.Item>
+            <div className="pb-2 space-y-2">
+              {sizeList.map((item, i) => (
+                <div key={i} className="grid gap-2 grid-cols-3">
+                  <Button size="large">{item.sizeId}</Button>
+                  <InputNumber
+                    required
+                    size="large"
+                    className="w-full"
+                    defaultValue={item.inStock}
+                    onChange={(value) =>
+                      handleSetSizeValue({ sizeId: item.sizeId, inStock: value })
+                    }
+                    type="number"
+                    placeholder="Quantity..."
+                  />
+                  <InputNumber
+                    size="large"
+                    min={0}
+                    max={100}
+                    className="w-full"
+                    defaultValue={item.discountPercent}
+                    formatter={(value) => `${value}%`}
+                    parser={(value) => value?.replace('%', '')}
+                    onChange={(value) =>
+                      handleSetSizeValue({ sizeId: item.sizeId, discountPercent: value })
+                    }
+                    placeholder="Discount..."
+                  />
+                </div>
+              ))}
+            </div>
+            <Form.Item label="Enable" name="enable" valuePropName="checked">
+              <Switch
+                checkedChildren={<CheckOutlined />}
+                unCheckedChildren={<CloseOutlined />}
+                defaultChecked
+                className="bg-gray-500"
+              />
+            </Form.Item>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               <Button
-                disabled={isEmptyObject(productAttributes) || loading || !update}
+                disabled={isEmptyObject(productAttributes) || !update || saveLoading}
                 type="primary"
                 htmlType="submit"
                 className="w-full"
                 size="large"
               >
-                {loading ? <Spin /> : 'Save'}
+                {saveLoading ? <Spin /> : 'Save'}
+              </Button>
+
+              <Button disabled={!update} onClick={handleClear} className="w-full" size="large">
+                Clear
               </Button>
 
               <ConfigProvider
@@ -406,7 +380,7 @@ export default function AddProduct() {
                 </Button>
               </ConfigProvider>
             </div>
-          </div>
+          </Card>
         </Form>
       </div>
     </>

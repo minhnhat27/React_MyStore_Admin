@@ -1,14 +1,19 @@
 import { Link } from 'react-router-dom'
-import { useLoading } from '../../App'
 import { useEffect, useState } from 'react'
-import orderService from '../../services/orderService'
+import orderService from '../../services/orders/orderService'
 import { formatDate, formatUSD } from '../../services/commonService'
-import { Button, Input, Pagination, Table, Tag, message } from 'antd'
+import { Breadcrumb, Button, Input, Pagination, Table, Tag, message } from 'antd'
+
+const breadcrumbItems = [
+  {
+    title: 'Orders',
+  },
+]
 
 export default function Orders() {
-  const { setIsLoading } = useLoading()
   const [orders, setOrders] = useState([])
 
+  const [loading, setLoading] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchKey, setSearchKey] = useState('')
 
@@ -85,9 +90,9 @@ export default function Orders() {
   ]
 
   useEffect(() => {
-    searchKey ? setSearchLoading(true) : setIsLoading(true)
+    searchKey ? setSearchLoading(true) : setLoading(true)
     orderService
-      .getOrders(currentPage, currentPageSize, searchKey)
+      .getAll(currentPage, currentPageSize, searchKey)
       .then((res) => {
         var newPaymentMethod = [
           ...new Set(res.data?.items?.map((order) => order.paymentMethod)),
@@ -114,28 +119,21 @@ export default function Orders() {
         setTotalItems(res.data?.totalItems)
       })
       .catch((err) => {
-        message.error(err.response.data ?? err.message)
+        message.error(err.response?.data || err.message)
         setSearchKey('')
       })
       .finally(() => {
-        setIsLoading(false)
+        setLoading(false)
         setSearchLoading(false)
       })
-  }, [setIsLoading, currentPage, currentPageSize, searchKey])
+  }, [currentPage, currentPageSize, searchKey])
 
   const handleSearch = (key) => key && key !== searchKey && setSearchKey(key)
 
   return (
     <>
       <div className="pb-4">
-        <div className="flex justify-between items-center py-5">
-          <div className="text-2xl font-bold">Order List</div>
-          <div className="space-x-2 text-sm">
-            <span>Dashboard</span>
-            <span>{'>'}</span>
-            <span className="text-gray-500">Order List</span>
-          </div>
-        </div>
+        <Breadcrumb className="py-2" items={breadcrumbItems} />
         <div className="py-2 px-4 bg-white rounded-lg drop-shadow">
           <span className="text-gray-600 text-sm">
             Tip search by Order ID: Each order is provided with a unique ID, which you can rely on
@@ -161,6 +159,7 @@ export default function Orders() {
             className="overflow-x-auto"
             rowHoverable
             pagination={false}
+            loading={loading}
           />
 
           <Pagination

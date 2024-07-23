@@ -1,3 +1,7 @@
+import { Link } from 'react-router-dom'
+
+const API_URL = process.env.REACT_APP_API_URL
+
 export const debounce = (func, delay) => {
   let timeout
   return function (...args) {
@@ -26,10 +30,52 @@ export const isEmptyObject = (obj) => {
   return JSON.stringify(obj) === '{}'
 }
 
-export const formatDate = (isoDateStr) => {
-  const date = new Date(isoDateStr)
-  return date.toLocaleString('en-GB')
+export const formatDate = (isoDateStr) => new Date(isoDateStr).toLocaleString('en-GB')
+
+export const toImageSrc = (url) => API_URL + '/' + url
+
+export const showError = (err) => err.response?.data?.title || err.response?.data || err.message
+
+export const transformDataToLabelValue = (data) => {
+  return data.map((item) => ({
+    ...item,
+    value: item.id,
+    label: item.name,
+  }))
 }
+
+export const toTextValue = (data) => {
+  return data.map((value) => ({
+    value: value,
+    text: value,
+  }))
+}
+
+export const itemRender = (currentRoute, params, items, paths) => {
+  const isLast = currentRoute?.path === items[items.length - 1]?.path
+
+  return isLast ? (
+    <span>{currentRoute.title}</span>
+  ) : (
+    <Link to={`/${paths.join('/')}`}>{currentRoute.title}</Link>
+  )
+}
+
+export const gender = [
+  { value: 'Male', text: 'Male' },
+  { value: 'Female', text: 'Female' },
+  { value: 'Unisex', text: 'Unisex' },
+]
+
+export const sizes = [
+  { value: 'XS', label: 'XS' },
+  { value: 'S', label: 'S' },
+  { value: 'M', label: 'M' },
+  { value: 'L', label: 'L' },
+  { value: 'XL', label: 'XL' },
+  { value: 'XXL', label: 'XXL' },
+  { value: 'XXXL', label: 'XXXL' },
+]
 
 export const getBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -38,13 +84,6 @@ export const getBase64 = (file) =>
     reader.onload = () => resolve(reader.result)
     reader.onerror = (error) => reject(error)
   })
-
-// export const toImageSrc = (base64) => `data:image/;base64,${base64}`
-
-const API_IMG = 'https://localhost:7002/images'
-
-export const toProductImageUrl = (url) => API_IMG + `/Products/${url}`
-export const toBrandImageUrl = (url) => API_IMG + `/Brands/${url}`
 
 export const getFileFromUrl = async (url, filename) => {
   try {
@@ -58,20 +97,6 @@ export const getFileFromUrl = async (url, filename) => {
     return null
   }
 }
-
-export const transformDataToLabelValue = (data) => {
-  return data.map((item) => ({
-    ...item,
-    value: item.id,
-    label: item.name,
-  }))
-}
-
-export const gender = [
-  { value: 'Male', text: 'Male' },
-  { value: 'Female', text: 'Female' },
-  { value: 'Unisex', text: 'Unisex' },
-]
 
 export function base64toFile(dataurl, filename) {
   dataurl = `data:image/;base64,${dataurl}`

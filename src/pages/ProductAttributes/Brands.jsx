@@ -1,34 +1,92 @@
-import { Button, Form, Image, Input, Modal, Spin, Upload, message } from 'antd'
-import { getBase64, toBrandImageUrl } from '../../services/commonService'
+import {
+  Breadcrumb,
+  Button,
+  Card,
+  Form,
+  Image,
+  Input,
+  Popconfirm,
+  Spin,
+  Table,
+  Tooltip,
+  Upload,
+} from 'antd'
+import { getBase64, showError, toImageSrc } from '../../services/commonService'
 import { useState } from 'react'
-import { PlusOutlined, DeleteTwoTone } from '@ant-design/icons'
-import productService from '../../services/productService'
+import { PlusOutlined, DeleteOutlined, EditTwoTone } from '@ant-design/icons'
+import brandService from '../../services/products/brandService'
 import { useEffect } from 'react'
-import { useLoading } from '../../App'
+import { useAntdMessage } from '../../App'
+
+const breadcrumbItems = [
+  {
+    title: 'Product Attributes',
+  },
+  {
+    title: 'Brands',
+  },
+]
+
+const columns = (handleDelete, onEdit) => [
+  {
+    title: 'Name',
+    dataIndex: 'name',
+    align: 'center',
+  },
+  {
+    title: 'Image',
+    dataIndex: 'imageUrl',
+    align: 'center',
+    render: (url) => (
+      <Image
+        width={100}
+        height={100}
+        className="object-contain"
+        src={toImageSrc(url)}
+        alt=""
+        loading="lazy"
+      />
+    ),
+  },
+  {
+    title: 'Action',
+    align: 'center',
+    render: (_, record) => (
+      <div className="space-x-4 cursor-pointer select-none text-lg">
+        <Tooltip title="Edit">
+          <EditTwoTone onClick={() => onEdit(record)} />
+        </Tooltip>
+        <Popconfirm title="Sure to delete?" onConfirm={() => handleDelete(record.id)}>
+          <DeleteOutlined className="text-red-500" />
+        </Popconfirm>
+      </div>
+    ),
+  },
+]
 
 export default function Brand() {
-  const { setIsLoading } = useLoading()
-  const [deleteLoading, setDeleteLoading] = useState(false)
-  const [addBrandLoading, setAddBrandLoading] = useState(false)
+  //const [deleteLoading, setDeleteLoading] = useState(false)
+  const [saveLoading, setSaveLoading] = useState(false)
 
   const [form] = Form.useForm()
-  const [update, setUpdate] = useState(false)
-  const [open, setOpen] = useState(false)
+  const [isUpdate, setIsUpdate] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewImage, setPreviewImage] = useState('')
   const [fileList, setFileList] = useState([])
 
   const [brands, setBrands] = useState([])
-  const [brandDelete, setBrandDelete] = useState({})
+  const [brandId, setBrandId] = useState('')
+  const { showMessage } = useAntdMessage()
 
   useEffect(() => {
-    setIsLoading(true)
-    productService
-      .getBrands()
+    setLoading(true)
+    brandService
+      .getAll()
       .then((res) => setBrands(res.data))
-      .catch((err) => message.error(err.response.data || err.message))
-      .finally(() => setIsLoading(false))
-  }, [update, setIsLoading])
+      .catch((err) => showMessage.error(showError(err)))
+      .finally(() => setLoading(false))
+  }, [showMessage])
 
   const handlePreview = async (file) => {
     if (!file.url && !file.preview) {
@@ -39,119 +97,103 @@ export default function Brand() {
   }
   const handleChangeFile = ({ fileList: newFileList }) => setFileList(newFileList)
 
-  const addBrand = () => {
-    setAddBrandLoading(true)
+  const handleSave = () => {
     const formData = new FormData()
-    const data = { ...form.getFieldsValue(), image: fileList[0].originFileObj }
-    Object.keys(data).forEach((key) => formData.append(key, data[key]))
+    setSaveLoading(true)
+    if (isUpdate) {
+      var imageUrl = form.getFieldValue('image')[0]?.url
+      const data = {
+        ...form.getFieldsValue(),
+        imageUrl: imageUrl,
+        image: imageUrl ? null : fileList[0]?.originFileObj,
+      }
+      Object.keys(data).forEach((key) => formData.append(key, data[key]))
 
-    productService
-      .addBrand(formData)
-      .then(() => {
-        form.resetFields()
-        setFileList([])
-        setUpdate(!update)
-        message.success('Successfully')
-      })
-      .catch((err) => message.error(err.response.data || err.message))
-      .finally(() => setAddBrandLoading(false))
+      brandService
+        .update(brandId, formData)
+        .then((res) => {
+          const newBrands = brands.filter((item) => item.id !== brandId)
+          setBrands([...newBrands, res.data])
+          setIsUpdate(false)
+          form.resetFields()
+          setFileList([])
+          showMessage.success('Successfully')
+        })
+        .catch((err) => showMessage.error(showError(err)))
+        .finally(() => setSaveLoading(false))
+    } else {
+      const data = { ...form.getFieldsValue(), image: fileList[0]?.originFileObj }
+      Object.keys(data).forEach((key) => formData.append(key, data[key]))
+
+      brandService
+        .create(formData)
+        .then((res) => {
+          setBrands([...brands, res.data])
+          form.resetFields()
+          setFileList([])
+          showMessage.success('Successfully')
+        })
+        .catch((err) => showMessage.error(showError(err)))
+        .finally(() => setSaveLoading(false))
+    }
   }
 
-  const confirmDelete = () => {
-    setDeleteLoading(true)
-    productService
-      .deleteBrand(brandDelete.id)
+  const handleDelete = async (id) => {
+    await brandService
+      .remove(id)
       .then(() => {
-        setUpdate(!update)
-        message.success('Success')
+        setBrands(brands.filter((item) => item.id !== id))
+        showMessage.success('Success')
       })
-      .catch((err) => message.error(err.response.data || err.message))
-      .finally(() => {
-        setOpen(false)
-        setDeleteLoading(false)
-      })
+      .catch((err) => showMessage.error(showError(err)))
+  }
+
+  const onEdit = (brand) => {
+    form.setFieldsValue({
+      ...brand,
+      image: [
+        {
+          name: brand.imageUrl,
+          url: brand.imageUrl,
+        },
+      ],
+    })
+    setFileList([
+      {
+        name: brand.imageUrl,
+        url: toImageSrc(brand.imageUrl),
+      },
+    ])
+    setBrandId(brand.id)
+    setIsUpdate(true)
+  }
+
+  const handleClear = () => {
+    form.resetFields()
+    setFileList([])
+    setIsUpdate(false)
+    setBrandId('')
   }
 
   return (
     <>
-      <Modal
-        title={`Confirm delete ${brandDelete.name} brand`}
-        open={open}
-        onOk={confirmDelete}
-        onCancel={() => {
-          setOpen(false)
-          setBrandDelete({})
-        }}
-        okText={deleteLoading ? <Spin /> : 'OK'}
-        okType="danger"
-        okButtonProps={{ disabled: deleteLoading, type: 'primary' }}
-        cancelButtonProps={{ disabled: deleteLoading }}
-      >
-        <p>Are you sure you want to delete this brand?</p>
-      </Modal>
       <div className="pb-4">
-        <div className="flex justify-between items-center py-5">
-          <div className="text-2xl font-bold">Brands Lists</div>
-          <div className="space-x-2 text-sm">
-            <span>Dashboard</span>
-            <span>{'>'}</span>
-            <span className="text-gray-500">Brands List</span>
-          </div>
-        </div>
-        <div className="grid gap-2 grid-cols-1 md:grid-cols-3">
-          <div className="p-2 h-fit md:col-span-2 bg-white rounded-lg drop-shadow">
-            <div className="relative overflow-x-auto px-4">
-              <table className="w-full text-sm text-center min-w-fit rtl:text-right text-gray-700 dark:text-gray-400">
-                <thead className="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                  <tr className="select-none">
-                    <th scope="col" className="p-2">
-                      ID
-                    </th>
-                    <th scope="col" className="p-2">
-                      Name
-                    </th>
-                    <th scope="col" className="p-2">
-                      Image
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {brands.map((item, i) => (
-                    <tr key={i} className="bg-white border-t dark:bg-gray-800 dark:border-gray-700">
-                      <th
-                        scope="row"
-                        className="py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                      >
-                        {item.id}
-                      </th>
-                      <td className="py-4">{item.name}</td>
-                      <td className="py-4 text-center">
-                        <Image
-                          width={100}
-                          height={100}
-                          className="object-contain"
-                          src={toBrandImageUrl(item.imageUrl)}
-                          alt=""
-                        />
-                      </td>
-                      <td className="py-4">
-                        <DeleteTwoTone
-                          onClick={() => {
-                            setBrandDelete(item)
-                            setOpen(true)
-                          }}
-                          className="cursor-pointer select-none"
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div className="py-2 px-4 h-fit bg-white rounded-lg drop-shadow">
+        <Breadcrumb className="py-2" items={breadcrumbItems} />
+        <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
+          <Card className="md:col-span-2 bg-white drop-shadow">
+            <Table
+              columns={columns(handleDelete, onEdit)}
+              dataSource={brands}
+              rowKey={(record) => record.id}
+              className="overflow-x-auto"
+              rowHoverable
+              pagination={false}
+              loading={loading}
+            />
+          </Card>
+          <Card className="h-fit bg-white drop-shadow">
             <span className="text-gray-700 font-bold">Add new brand</span>
-            <Form form={form} disabled={addBrandLoading} onFinish={addBrand}>
+            <Form form={form} disabled={saveLoading} onFinish={handleSave}>
               <div>
                 <label
                   htmlFor="description "
@@ -168,6 +210,7 @@ export default function Brand() {
                     maxLength={30}
                     size="large"
                     placeholder="Brand name..."
+                    allowClear
                   />
                 </Form.Item>
               </div>
@@ -183,6 +226,7 @@ export default function Brand() {
                 >
                   <Upload
                     beforeUpload={() => false}
+                    maxCount={1}
                     listType="picture-card"
                     fileList={fileList}
                     accept="image/png, image/gif, image/jpeg, image/svg"
@@ -212,11 +256,21 @@ export default function Brand() {
                 )}
               </div>
 
-              <Button type="primary" htmlType="submit" className="w-full" size="large">
-                {addBrandLoading ? <Spin /> : 'Save'}
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="primary" htmlType="submit" className="w-full" size="large">
+                  {saveLoading ? <Spin /> : isUpdate ? 'Update' : 'Save'}
+                </Button>
+                <Button
+                  disabled={!isUpdate || saveLoading}
+                  onClick={handleClear}
+                  className="w-full"
+                  size="large"
+                >
+                  Clear
+                </Button>
+              </div>
             </Form>
-          </div>
+          </Card>
         </div>
       </div>
     </>

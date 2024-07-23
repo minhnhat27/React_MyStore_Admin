@@ -29,7 +29,7 @@ export default function DefaultLayout({ children }) {
   }, [])
 
   useLayoutEffect(() => {
-    if (state.isAuthenticated) setNavItems(navigateItems.filter((e) => e.key !== '/login'))
+    if (state.isAuthenticated) setNavItems(navigateItems.filter((e) => e.key !== '/'))
     else setNavItems(navigateItems)
     setNavSelected(regex)
   }, [state.isAuthenticated, location.pathname, regex])

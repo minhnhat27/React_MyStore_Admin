@@ -26,22 +26,22 @@ export default function Login() {
       .login(form.getFieldsValue())
       .then(() => {
         dispatch(authActions.LOGIN)
-        navigate('/')
+        navigate('/home')
       })
-      .catch((err) => message.error(err.response.data || err.message))
+      .catch((err) => message.error(err.response?.data || err.message))
       .finally(() => setLoading(false))
   }
 
   return (
     <>
-      <div className="flex justify-center items-center h-full">
-        <div className="rounded-md bg-zinc-50 h-fit w-11/12 md:w-3/5 lg:w-1/2 px-10 py-4 drop-shadow space-y-4">
-          <div>
+      <div className="flex justify-center items-center h-screen bg-stone-300">
+        <div className="rounded-md bg-slate-100 w-11/12 md:w-3/5 lg:w-2/5 2xl:w-1/3 px-10 py-4 drop-shadow-lg space-y-4">
+          <>
             <div className="relative flex items-center justify-center">
               <img width="70" height="70" className="py-2 fs-4" src={logo} alt="logo" />
             </div>
             <p className="text-center font-bold text-xl mb-2">NNN Store Admin</p>
-          </div>
+          </>
           <Form form={form} disabled={loading} onFinish={handleSubmitLogin}>
             <div className="space-y-4">
               <Form.Item name="email" rules={[{ required: true, message: 'Email is required' }]}>

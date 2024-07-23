@@ -1,9 +1,9 @@
 import axios from 'axios'
 import { authHeader } from './authHeader'
 
-const API_URL = 'https://localhost:7002/api/upload'
+const API_URL = process.env.REACT_APP_API_URL + '/api/upload'
 
-const upload = async (data) => await axios.post(API_URL + '/product', data, authHeader())
+const upload = async (data) => await axios.post(API_URL + '/create', data, authHeader())
 
 const uploadService = {
   upload,

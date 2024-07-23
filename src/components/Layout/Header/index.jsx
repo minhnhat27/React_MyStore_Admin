@@ -30,7 +30,7 @@ export default function Header({ collapsed, toggleCollapsed }) {
     setIsModalOpen(false)
     authService.logout()
     dispatch(authActions.LOGOUT)
-    navigate('/login')
+    navigate('/')
   }
   const handleCancel = () => setIsModalOpen(false)
 

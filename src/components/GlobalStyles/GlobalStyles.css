@@ -19,35 +19,32 @@ input::-webkit-inner-spin-button {
 
 body {
   line-height: 1.5;
-  //background-color: #efefef;
+  /* background-color: #efefef; */
   text-rendering: optimizeSpeed;
-  &::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
-  }
-  &::-webkit-scrollbar-track {
-    background: white;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: #cccccc;
-    border-radius: 10px;
-  }
+}
+body::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+body::-webkit-scrollbar-track {
+  background: white;
+}
+body::-webkit-scrollbar-thumb {
+  background: #cccccc;
+  border-radius: 10px;
 }
 
-div {
-  &::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  &::-webkit-scrollbar-track {
-    background: white;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: #cccccc;
-    border-radius: 10px;
-  }
+div::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
-
+div::-webkit-scrollbar-track {
+  background: white;
+}
+div::-webkit-scrollbar-thumb {
+  background: #cccccc;
+  border-radius: 10px;
+}
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
