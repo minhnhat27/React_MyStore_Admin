@@ -15,7 +15,7 @@ const sendCode = async (data) => await axios.post(API_URL + '/send-code', data)
 
 const register = async (data) => await axios.post(API_URL + '/register', data)
 
-const logout = () => Cookies.remove('user_Data')
+const logout = () => Cookies.remove('nstore_data')
 
 const getCurrentUser = () => {
   const user = Cookies.get('nstore_data')
@@ -26,7 +26,7 @@ const loginGoogle = async (data) =>
   await axios.post(API_URL + '/login-google', data).then((res) => {
     const expires = 12 * 60 * 60 * 1000
     const in12Hour = new Date(new Date().getTime() + expires)
-    Cookies.set('user_Data', JSON.stringify(res.data), { expires: in12Hour })
+    Cookies.set('nstore_data', JSON.stringify(res.data), { expires: in12Hour })
     return res
   })
 

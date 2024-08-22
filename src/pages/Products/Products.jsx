@@ -121,10 +121,10 @@ export default function Products() {
   const [categoryNames, setCategoryNames] = useState([])
 
   useEffect(() => {
-    searchKey ? setSearchLoading(true) : setLoading(true)
-    productService
-      .getAll(currentPage, currentPageSize, searchKey)
-      .then((res) => {
+    const fetchData = async () => {
+      try {
+        searchKey ? setSearchLoading(true) : setLoading(true)
+        const res = await productService.getAll(currentPage, currentPageSize, searchKey)
         var newBrandNames = toTextValue([
           ...new Set(res.data?.items?.map((order) => order.brandName)),
         ])
@@ -136,12 +136,14 @@ export default function Products() {
         setCategoryNames(newcategoryNames)
         setProducts(res.data?.items)
         setTotalItems(res.data?.totalItems)
-      })
-      .catch(() => setSearchKey(''))
-      .finally(() => {
+      } catch (error) {
+        setSearchKey('')
+      } finally {
         setLoading(false)
         setSearchLoading(false)
-      })
+      }
+    }
+    fetchData()
   }, [currentPage, currentPageSize, searchKey])
 
   const handleChangeEnable = async (id, value) => {

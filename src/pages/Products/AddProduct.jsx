@@ -92,46 +92,44 @@ export default function AddProduct() {
     setSizeList(newList)
   }
 
-  const createProduct = () => {
+  const createProduct = async () => {
     try {
       setSaveLoading(true)
       const formData = new FormData()
-
-      const newSizeList = sizeList.map((item) => ({
-        ...item,
-        discountPercent: item.discountPercent ?? 0,
-      }))
       fileList.forEach((item, i) => formData.append(`images[${i}]`, item.originFileObj))
 
-      newSizeList.forEach((item, i) =>
+      sizeList.forEach((item, i) =>
         Object.keys(item).forEach((key) =>
           formData.append(`sizesAndQuantities[${i}].${key}`, item[key]),
         ),
       )
+      const values = form.getFieldsValue()
       const data = {
-        ...form.getFieldsValue(),
-        enable: form.getFieldValue('enable') ?? true,
-        description: form.getFieldValue('description') ?? '',
+        ...values,
+        enable: values.enable ?? true,
+        description: values.description ?? '',
+        discountPercent: values.discountPercent ?? 0,
       }
       delete data.imageUrls
       delete data.sizeIds
 
       data.materialIds.forEach((item, i) => formData.append(`materialIds[${i}]`, item))
-      delete data.materials
+      delete data.materialIds
 
       Object.keys(data).forEach((key) => formData.append(key, data[key]))
 
-      productService
-        .create(formData)
-        .then(() => {
-          form.resetFields()
-          setSizeList([])
-          setFileList([])
-          showMessage.success('Successfully')
-          setUpdate(false)
-        })
-        .catch((err) => showMessage.error(err.response?.data || err.message))
-        .finally(() => setSaveLoading(false))
+      try {
+        await productService.create(formData)
+        form.resetFields()
+        setSizeList([])
+        setFileList([])
+        showMessage.success('Successfully')
+        setUpdate(false)
+      } catch (error) {
+        showMessage.error(showError(error))
+      } finally {
+        setSaveLoading(false)
+      }
     } catch (error) {
       console.log(error)
     }
@@ -239,7 +237,7 @@ export default function AddProduct() {
               />
             </Form.Item>
           </Card>
-          <Card className="drop-shadow">
+          <Card className="drop-shadow h-fit">
             <Form.Item
               label="Upload Images"
               name="imageUrls"
@@ -277,19 +275,35 @@ export default function AddProduct() {
                 src={previewImage}
               />
             )}
-            <Form.Item
-              label="Price"
-              name="price"
-              rules={[{ required: true, message: 'Price is required' }]}
-            >
-              <InputNumber
-                size="large"
-                className="w-full col-span-2"
-                formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
-                placeholder="Price..."
-              />
-            </Form.Item>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Form.Item
+                name="price"
+                label="Price"
+                rules={[{ required: true, message: 'Price is required' }]}
+              >
+                <InputNumber
+                  size="large"
+                  className="w-full col-span-2"
+                  formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
+                  placeholder="Price..."
+                />
+              </Form.Item>
+              <Form.Item name="discountPercent" label="Giảm giá">
+                <InputNumber
+                  size="large"
+                  min={0}
+                  max={100}
+                  className="w-full"
+                  defaultValue={0}
+                  formatter={(value) => `${value}%`}
+                  parser={(value) => value?.replace('%', '')}
+                  placeholder="Discount..."
+                />
+              </Form.Item>
+            </div>
+
             <Form.Item
               label="Add size"
               name="sizeIds"
@@ -314,26 +328,13 @@ export default function AddProduct() {
                   <InputNumber
                     required
                     size="large"
-                    className="w-full"
+                    className="w-full col-span-2"
                     defaultValue={item.inStock}
                     onChange={(value) =>
                       handleSetSizeValue({ sizeId: item.sizeId, inStock: value })
                     }
                     type="number"
                     placeholder="Quantity..."
-                  />
-                  <InputNumber
-                    size="large"
-                    min={0}
-                    max={100}
-                    className="w-full"
-                    defaultValue={item.discountPercent}
-                    formatter={(value) => `${value}%`}
-                    parser={(value) => value?.replace('%', '')}
-                    onChange={(value) =>
-                      handleSetSizeValue({ sizeId: item.sizeId, discountPercent: value })
-                    }
-                    placeholder="Discount..."
                   />
                 </div>
               ))}

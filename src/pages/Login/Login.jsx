@@ -5,7 +5,8 @@ import logo from '../../logo.png'
 import authService from '../../services/authService'
 import { useAuth } from '../../App'
 import authActions from '../../services/authAction'
-import { Button, Form, Input, Spin, message } from 'antd'
+import { Button, Form, Input, message } from 'antd'
+import { showError } from '../../services/commonService'
 
 export default function Login() {
   const { state, dispatch } = useAuth()
@@ -20,31 +21,32 @@ export default function Login() {
     }
   }, [state.isAuthenticated, navigate])
 
-  const handleSubmitLogin = () => {
-    setLoading(true)
-    authService
-      .login(form.getFieldsValue())
-      .then(() => {
-        dispatch(authActions.LOGIN)
-        navigate('/home')
-      })
-      .catch((err) => message.error(err.response?.data || err.message))
-      .finally(() => setLoading(false))
+  const handleSubmitLogin = async () => {
+    try {
+      setLoading(true)
+      await authService.login(form.getFieldsValue())
+      dispatch(authActions.LOGIN)
+      navigate('/home')
+    } catch (error) {
+      message.error(showError(error))
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <>
       <div className="flex justify-center items-center h-screen bg-stone-300">
-        <div className="rounded-md bg-slate-100 w-11/12 md:w-3/5 lg:w-2/5 2xl:w-1/3 px-10 py-4 drop-shadow-lg space-y-4">
+        <div className="transition-all rounded-md bg-slate-100 w-11/12 md:w-3/5 lg:w-2/5 2xl:w-1/3 px-10 py-4 drop-shadow-lg space-y-4">
           <>
             <div className="relative flex items-center justify-center">
               <img width="70" height="70" className="py-2 fs-4" src={logo} alt="logo" />
             </div>
-            <p className="text-center font-bold text-xl mb-2">NNN Store Admin</p>
+            <p className="text-center font-bold text-xl mb-2">VOA Store Admin</p>
           </>
           <Form form={form} disabled={loading} onFinish={handleSubmitLogin}>
             <div className="space-y-4">
-              <Form.Item name="email" rules={[{ required: true, message: 'Email is required' }]}>
+              <Form.Item name="username" rules={[{ required: true, message: 'Email is required' }]}>
                 <Input placeholder="Email" size="large" />
               </Form.Item>
               <Form.Item
@@ -53,21 +55,19 @@ export default function Login() {
               >
                 <Input.Password placeholder="Password" size="large" />
               </Form.Item>
-              <Button htmlType="submit" type="primary" className="bg-blue-500 w-full" size="large">
-                {loading ? <Spin /> : 'Login'}
+              <Button
+                loading={loading}
+                htmlType="submit"
+                type="primary"
+                className="bg-blue-500 w-full"
+                size="large"
+              >
+                Đăng nhập
               </Button>
-
-              {/* <button
-              disabled={loading}
-              type="submit"
-              className="w-full py-2 fs-4 mb-4 rounded-md bg-gradient-to-r from-emerald-100 to-sky-300 text-slate-800 font-semibold"
-            >
-              {loading ? <InsideLoading /> : 'Login'}
-            </button> */}
             </div>
           </Form>
           <div className="text-center">
-            <Link className="text-gray-700">Forget password?</Link>
+            <Link className="text-gray-700">Quên mật khẩu?</Link>
           </div>
         </div>
       </div>
