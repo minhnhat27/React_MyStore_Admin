@@ -1,14 +1,18 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import productService from '../../services/products/productService'
-import { Breadcrumb, Button, Flex, Image, Input, Pagination, Popconfirm, Switch, Table } from 'antd'
-import { formatUSD, gender, showError, toImageSrc, toTextValue } from '../../services/commonService'
-import { CheckOutlined, CloseOutlined, DeleteOutlined } from '@ant-design/icons'
-import { useAntdMessage } from '../../App'
+import { App, Button, Flex, Image, Input, Pagination, Popconfirm, Switch, Table } from 'antd'
+import { formatVND, gender, showError, toImageSrc, toTextValue } from '../../services/commonService'
+import { CheckOutlined, CloseOutlined, DeleteOutlined, HomeFilled } from '@ant-design/icons'
+import BreadcrumbLink from '../../components/BreadcrumbLink'
 
 const breadcrumbItems = [
   {
-    title: 'Products',
+    path: '/',
+    title: <HomeFilled />,
+  },
+  {
+    title: 'Sản phẩm',
   },
 ]
 
@@ -19,7 +23,7 @@ const columns = (handleChangeEnable, handleDeleteProduct, brandNames, categoryNa
     render: (value) => <span className="font-semibold">#{value}</span>,
   },
   {
-    title: 'Image',
+    title: 'Ảnh đại diện',
     dataIndex: 'imageUrl',
     align: 'center',
     render: (url) => (
@@ -34,47 +38,47 @@ const columns = (handleChangeEnable, handleDeleteProduct, brandNames, categoryNa
     ),
   },
   {
-    title: 'Product Name',
+    title: 'Tên',
     dataIndex: 'name',
     sorter: (a, b) => a.name.localeCompare(b.name),
   },
   {
-    title: 'Price',
+    title: 'Giá',
     dataIndex: 'price',
-    render: (value) => formatUSD.format(value),
+    render: (value) => formatVND.format(value),
     sorter: (a, b) => a.price - b.price,
   },
   {
-    title: 'Gender',
+    title: 'Giới tính',
     dataIndex: 'gender',
     filters: gender,
     onFilter: (value, record) => record.gender.indexOf(value) === 0,
   },
   {
-    title: 'Brand',
+    title: 'Thương hiệu',
     dataIndex: 'brandName',
     filters: brandNames,
     onFilter: (value, record) => record.brandName.indexOf(value) === 0,
   },
   {
-    title: 'Category',
+    title: 'Danh mục',
     dataIndex: 'categoryName',
     filters: categoryNames,
     onFilter: (value, record) => record.categoryName.indexOf(value) === 0,
   },
   {
-    title: 'Sold',
+    title: 'Đã bán',
     dataIndex: 'sold',
     align: 'center',
     sorter: (a, b) => a.sold - b.sold,
   },
   {
-    title: 'Enable',
+    title: 'Kích hoạt',
     dataIndex: 'enable',
     align: 'center',
     filters: [
-      { value: true, text: 'Enable' },
-      { value: false, text: 'Not Enable' },
+      { value: true, text: 'Kích hoạt' },
+      { value: false, text: 'Chưa kích hoạt' },
     ],
     onFilter: (value, record) => record.enable === value,
     render: (value, record) => (
@@ -88,14 +92,14 @@ const columns = (handleChangeEnable, handleDeleteProduct, brandNames, categoryNa
     ),
   },
   {
-    title: 'Action',
+    title: 'Hành động',
     align: 'center',
     render: (_, record) => (
       <Flex className="space-x-2">
         <Link to={`product-detail/${record.id}`}>
           <Button>Detail</Button>
         </Link>
-        <Popconfirm title="Are you sure delete?" onConfirm={() => handleDeleteProduct(record.id)}>
+        <Popconfirm title="Xác nhận xóa?" onConfirm={() => handleDeleteProduct(record.id)}>
           <Button className="flex items-center">
             <DeleteOutlined className="text-red-500" />
           </Button>
@@ -106,7 +110,7 @@ const columns = (handleChangeEnable, handleDeleteProduct, brandNames, categoryNa
 ]
 
 export default function Products() {
-  const { showMessage } = useAntdMessage()
+  const { message } = App.useApp()
   const [products, setProducts] = useState([])
 
   const [loading, setLoading] = useState(false)
@@ -151,9 +155,9 @@ export default function Products() {
     try {
       const data = { enable: value }
       await productService.updateEnable(id, data)
-      showMessage.success('Successfully')
+      message.success('Cập nhật thành công')
     } catch (error) {
-      showMessage.error(showError(error))
+      message.error(showError(error))
     }
     //.finally(() => setIsLoading(false))
   }
@@ -164,32 +168,29 @@ export default function Products() {
     try {
       await productService.remove(id)
       setProducts(products.filter((item) => item.id !== id))
-      showMessage.success('Successfully')
+      message.success('Thành công')
     } catch (error) {
-      showMessage.error(showError(error))
+      message.error(showError(error))
     }
   }
 
   return (
     <>
       <div className="pb-4">
-        <Breadcrumb className="py-2" items={breadcrumbItems} />
-        <div className="py-2 px-4 bg-white rounded-lg drop-shadow">
-          <span className="text-gray-600 text-sm">
-            Tip search by Product ID: Each product is provided with a unique ID, which you can rely
-            on to find the exact product you need.
-          </span>
-          <div className="py-4 text-sm flex items-center space-x-2">
+        <BreadcrumbLink breadcrumbItems={breadcrumbItems} />
+        <div className="py-2 px-4 space-y-2 bg-white rounded-lg drop-shadow">
+          <div className="flex space-x-2 py-4">
             <Input.Search
               size="large"
               allowClear
+              placeholder="ID, tên, giá,..."
               loading={searchLoading}
               onSearch={(key) => handleSearch(key)}
               onChange={(e) => e.target.value === '' && setSearchKey('')}
             />
             <Link to="add-product">
               <Button size="large" type="primary">
-                + Add new
+                + Thêm sản phẩm
               </Button>
             </Link>
           </div>
@@ -205,9 +206,10 @@ export default function Products() {
           />
 
           <Pagination
-            className="text-center mt-4"
+            hideOnSinglePage
+            className="py-4"
             total={totalItems}
-            showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
+            showTotal={(total, range) => `${range[0]}-${range[1]} của ${total} sản phẩm`}
             defaultPageSize={currentPageSize}
             defaultCurrent={currentPage}
             showSizeChanger={true}

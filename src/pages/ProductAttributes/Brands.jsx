@@ -1,5 +1,5 @@
 import {
-  Breadcrumb,
+  App,
   Button,
   Card,
   Form,
@@ -13,51 +13,59 @@ import {
 } from 'antd'
 import { getBase64, showError, toImageSrc } from '../../services/commonService'
 import { useState } from 'react'
-import { PlusOutlined, DeleteOutlined, EditTwoTone } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined, EditTwoTone, HomeFilled } from '@ant-design/icons'
 import brandService from '../../services/products/brandService'
 import { useEffect } from 'react'
-import { useAntdMessage } from '../../App'
+import BreadcrumbLink from '../../components/BreadcrumbLink'
 
 const breadcrumbItems = [
   {
-    title: 'Product Attributes',
+    path: '/',
+    title: <HomeFilled />,
   },
   {
-    title: 'Brands',
+    title: 'Thuộc tính sản phẩm',
+  },
+  {
+    title: 'Thương hiệu',
   },
 ]
 
 const columns = (handleDelete, onEdit) => [
   {
-    title: 'Name',
+    title: 'Tên',
     dataIndex: 'name',
     align: 'center',
   },
   {
-    title: 'Image',
+    title: 'Hình ảnh',
     dataIndex: 'imageUrl',
     align: 'center',
     render: (url) => (
       <Image
         width={100}
         height={100}
-        className="object-contain"
+        className="object-cover"
         src={toImageSrc(url)}
-        alt=""
+        alt="photo"
         loading="lazy"
       />
     ),
   },
   {
-    title: 'Action',
+    title: 'Hành động',
     align: 'center',
     render: (_, record) => (
-      <div className="space-x-4 cursor-pointer select-none text-lg">
-        <Tooltip title="Edit">
-          <EditTwoTone onClick={() => onEdit(record)} />
+      <div className="cursor-pointer select-none text-lg inline-flex space-x-2">
+        <Tooltip title="Chỉnh sửa">
+          <Button className="flex items-center" onClick={() => onEdit(record)}>
+            <EditTwoTone />
+          </Button>
         </Tooltip>
-        <Popconfirm title="Sure to delete?" onConfirm={() => handleDelete(record.id)}>
-          <DeleteOutlined className="text-red-500" />
+        <Popconfirm title="Xác nhận xóa?" onConfirm={() => handleDelete(record.id)}>
+          <Button danger className="flex items-center">
+            <DeleteOutlined className="text-red-500" />
+          </Button>
         </Popconfirm>
       </div>
     ),
@@ -65,7 +73,6 @@ const columns = (handleDelete, onEdit) => [
 ]
 
 export default function Brand() {
-  //const [deleteLoading, setDeleteLoading] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
 
   const [form] = Form.useForm()
@@ -77,16 +84,23 @@ export default function Brand() {
 
   const [brands, setBrands] = useState([])
   const [brandId, setBrandId] = useState('')
-  const { showMessage } = useAntdMessage()
+
+  const { message } = App.useApp()
 
   useEffect(() => {
-    setLoading(true)
-    brandService
-      .getAll()
-      .then((res) => setBrands(res.data))
-      .catch((err) => showMessage.error(showError(err)))
-      .finally(() => setLoading(false))
-  }, [showMessage])
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const res = await brandService.getAll()
+        setBrands(res.data)
+      } catch (error) {
+        message.error(showError(error))
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [message])
 
   const handlePreview = async (file) => {
     if (!file.url && !file.preview) {
@@ -117,9 +131,9 @@ export default function Brand() {
           setIsUpdate(false)
           form.resetFields()
           setFileList([])
-          showMessage.success('Successfully')
+          message.success('Thành công')
         })
-        .catch((err) => showMessage.error(showError(err)))
+        .catch((err) => message.error(showError(err)))
         .finally(() => setSaveLoading(false))
     } else {
       const data = { ...form.getFieldsValue(), image: fileList[0]?.originFileObj }
@@ -131,9 +145,9 @@ export default function Brand() {
           setBrands([...brands, res.data])
           form.resetFields()
           setFileList([])
-          showMessage.success('Successfully')
+          message.success('Thành công')
         })
-        .catch((err) => showMessage.error(showError(err)))
+        .catch((err) => message.error(showError(err)))
         .finally(() => setSaveLoading(false))
     }
   }
@@ -143,9 +157,9 @@ export default function Brand() {
       .remove(id)
       .then(() => {
         setBrands(brands.filter((item) => item.id !== id))
-        showMessage.success('Success')
+        message.success('Success')
       })
-      .catch((err) => showMessage.error(showError(err)))
+      .catch((err) => message.error(showError(err)))
   }
 
   const onEdit = (brand) => {
@@ -178,9 +192,9 @@ export default function Brand() {
   return (
     <>
       <div className="pb-4">
-        <Breadcrumb className="py-2" items={breadcrumbItems} />
+        <BreadcrumbLink breadcrumbItems={breadcrumbItems} />
         <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
-          <Card className="md:col-span-2 bg-white drop-shadow">
+          <Card className="h-fit md:col-span-2 bg-white drop-shadow">
             <Table
               columns={columns(handleDelete, onEdit)}
               dataSource={brands}
@@ -191,74 +205,64 @@ export default function Brand() {
               loading={loading}
             />
           </Card>
-          <Card className="h-fit bg-white drop-shadow">
-            <span className="text-gray-700 font-bold">Add new brand</span>
-            <Form form={form} disabled={saveLoading} onFinish={handleSave}>
-              <div>
-                <label
-                  htmlFor="description "
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          <Card title="Thương hiệu" className="h-fit bg-white drop-shadow">
+            <Form layout="vertical" form={form} disabled={saveLoading} onFinish={handleSave}>
+              <Form.Item
+                label="Tên thương hiệu"
+                name="name"
+                rules={[{ required: true, message: 'Vui lòng nhập tên' }]}
+              >
+                <Input
+                  count={{
+                    show: true,
+                    max: 25,
+                  }}
+                  maxLength={25}
+                  size="large"
+                  placeholder="ABC..."
+                  allowClear
+                />
+              </Form.Item>
+              <Form.Item
+                label="Tải ảnh lên"
+                name="image"
+                rules={[{ required: true, message: 'Vui lòng chọn ảnh' }]}
+                getValueFromEvent={(e) => e.fileList}
+              >
+                <Upload
+                  beforeUpload={() => false}
+                  maxCount={1}
+                  listType="picture-card"
+                  fileList={fileList}
+                  accept="image/png, image/gif, image/jpeg, image/svg"
+                  onPreview={handlePreview}
+                  onChange={handleChangeFile}
                 >
-                  Brand name <span className="text-red-500 font-bold text-lg">*</span>
-                </label>
-                <Form.Item name="name" rules={[{ required: true, message: 'Name is required' }]}>
-                  <Input
-                    count={{
-                      show: true,
-                      max: 30,
-                    }}
-                    maxLength={30}
-                    size="large"
-                    placeholder="Brand name..."
-                    allowClear
-                  />
-                </Form.Item>
-              </div>
-
-              <div>
-                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  Upload image <span className="text-red-500 font-bold text-lg">*</span>
-                </label>
-                <Form.Item
-                  name="image"
-                  rules={[{ required: true, message: 'Please choose image' }]}
-                  getValueFromEvent={(e) => e.fileList}
-                >
-                  <Upload
-                    beforeUpload={() => false}
-                    maxCount={1}
-                    listType="picture-card"
-                    fileList={fileList}
-                    accept="image/png, image/gif, image/jpeg, image/svg"
-                    onPreview={handlePreview}
-                    onChange={handleChangeFile}
-                  >
-                    {fileList.length >= 1 ? null : (
-                      <button type="button">
-                        <PlusOutlined />
-                        <div>Upload</div>
-                      </button>
-                    )}
-                  </Upload>
-                </Form.Item>
-                {previewImage && (
-                  <Image
-                    wrapperStyle={{
-                      display: 'none',
-                    }}
-                    preview={{
-                      visible: previewOpen,
-                      onVisibleChange: (visible) => setPreviewOpen(visible),
-                      afterOpenChange: (visible) => !visible && setPreviewImage(''),
-                    }}
-                    src={previewImage}
-                  />
-                )}
-              </div>
+                  {fileList.length >= 1 ? null : (
+                    <button type="button">
+                      <PlusOutlined />
+                      <div>Upload</div>
+                    </button>
+                  )}
+                </Upload>
+              </Form.Item>
+              {previewImage && (
+                <Image
+                  wrapperStyle={{
+                    display: 'none',
+                  }}
+                  preview={{
+                    visible: previewOpen,
+                    onVisibleChange: (visible) => setPreviewOpen(visible),
+                    afterOpenChange: (visible) => !visible && setPreviewImage(''),
+                  }}
+                  src={previewImage}
+                />
+              )}
 
               <div className="grid grid-cols-2 gap-2">
                 <Button type="primary" htmlType="submit" className="w-full" size="large">
-                  {saveLoading ? <Spin /> : isUpdate ? 'Update' : 'Save'}
+                  {saveLoading ? <Spin /> : isUpdate ? 'Cập nhật' : 'Thêm'}
                 </Button>
                 <Button
                   disabled={!isUpdate || saveLoading}
@@ -266,7 +270,7 @@ export default function Brand() {
                   className="w-full"
                   size="large"
                 >
-                  Clear
+                  Làm mới
                 </Button>
               </div>
             </Form>

@@ -1,5 +1,3 @@
-import { Link } from 'react-router-dom'
-
 const API_URL = process.env.REACT_APP_API_URL
 
 export const debounce = (func, delay) => {
@@ -36,7 +34,7 @@ export const toImageSrc = (url) => API_URL + '/' + url
 
 export const showError = (err) => err.response?.data?.title || err.response?.data || err.message
 
-export const transformDataToLabelValue = (data) => {
+export const toTextLabel = (data) => {
   return data.map((item) => ({
     ...item,
     value: item.id,
@@ -51,20 +49,10 @@ export const toTextValue = (data) => {
   }))
 }
 
-export const itemRender = (currentRoute, params, items, paths) => {
-  const isLast = currentRoute?.path === items[items.length - 1]?.path
-
-  return isLast ? (
-    <span>{currentRoute.title}</span>
-  ) : (
-    <Link to={`/${paths.join('/')}`}>{currentRoute.title}</Link>
-  )
-}
-
 export const gender = [
-  { value: 'Male', text: 'Male' },
-  { value: 'Female', text: 'Female' },
-  { value: 'Unisex', text: 'Unisex' },
+  { value: 0, label: 'Nam' },
+  { value: 1, label: 'Nữ' },
+  { value: 2, label: 'Unisex' },
 ]
 
 export const sizes = [

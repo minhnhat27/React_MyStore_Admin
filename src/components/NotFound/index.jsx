@@ -9,7 +9,7 @@ export default function NotFound() {
       subTitle="Sorry, the page you visited does not exist."
       extra={
         <Link to={-1}>
-          <Button type="primary">Back Home</Button>
+          <Button type="primary">Trở về</Button>
         </Link>
       }
     />

@@ -1,17 +1,23 @@
-import { Breadcrumb, Button, Card, Descriptions, Table } from 'antd'
-import { itemRender, showError } from '../../services/commonService'
+import { Button, Card, Descriptions, Table } from 'antd'
+import { showError } from '../../services/commonService'
 import { useEffect, useState } from 'react'
 import orderService from '../../services/orders/orderService'
 import { useParams } from 'react-router-dom'
 import { useAntdMessage, useLoading } from '../../App'
+import BreadcrumbLink from '../../components/BreadcrumbLink'
+import { HomeFilled } from '@ant-design/icons'
 
 const breadcrumbItems = [
   {
-    path: 'orders-management',
-    title: 'Orders',
+    path: '/',
+    title: <HomeFilled />,
   },
   {
-    title: 'Order Detail',
+    path: 'orders-management',
+    title: 'Đơn hàng',
+  },
+  {
+    title: 'Chi tiết đơn hàng',
   },
 ]
 
@@ -112,7 +118,7 @@ export default function OrderDetail() {
   return (
     <>
       <div className="pb-4">
-        <Breadcrumb className="py-2" itemRender={itemRender} items={breadcrumbItems} />
+        <BreadcrumbLink breadcrumbItems={breadcrumbItems} />
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
           <div className="grid gap-4 grid-cols-1 h-fit">
             <Card className="drop-shadow" size="small">

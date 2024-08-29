@@ -1,12 +1,17 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import orderService from '../../services/orders/orderService'
-import { formatDate, formatUSD } from '../../services/commonService'
+import { formatDate, formatUSD, showError } from '../../services/commonService'
 import { Breadcrumb, Button, Input, Pagination, Table, Tag, message } from 'antd'
+import { HomeFilled } from '@ant-design/icons'
 
 const breadcrumbItems = [
   {
-    title: 'Orders',
+    path: '/',
+    title: <HomeFilled />,
+  },
+  {
+    title: 'Đơn hàng',
   },
 ]
 
@@ -32,54 +37,54 @@ export default function Orders() {
       width: 70,
     },
     {
-      title: 'Total',
+      title: 'Tổng',
       dataIndex: 'total',
       render: (value) => formatUSD.format(value),
       sorter: (a, b) => a.total - b.total,
     },
     {
-      title: 'Paid',
+      title: 'Thanh toán',
       dataIndex: 'paid',
       align: 'center',
       render: (value) => (
         <Tag color={value ? 'green' : 'red'} key={value}>
-          {value ? 'Paid'.toUpperCase() : 'Unpaid'.toUpperCase()}
+          {value ? 'Đã thanh toán' : 'Chưa thanh toán'}
         </Tag>
       ),
       filters: [
-        { value: true, text: 'Paid' },
-        { value: false, text: 'Unpaid' },
+        { value: true, text: 'Đã thanh toán' },
+        { value: false, text: 'Chưa thanh toán' },
       ],
       onFilter: (value, record) => record.paid === value,
     },
     {
-      title: 'Method',
+      title: 'Phương thức',
       dataIndex: 'paymentMethod',
       align: 'center',
       filters: paymentMethods,
       onFilter: (value, record) => record.paymentMethod.indexOf(value) === 0,
     },
     {
-      title: 'Order Date',
+      title: 'Ngày đặt',
       dataIndex: 'orderDate',
       render: (value) => value !== null && formatDate(value),
       sorter: (a, b) => new Date(a.orderDate) - new Date(b.orderDate),
       width: 120,
     },
     {
-      title: 'Order Status',
+      title: 'Trạng thái',
       dataIndex: 'orderStatus',
       align: 'center',
       filters: orderStatus,
       onFilter: (value, record) => record.orderStatus.indexOf(value) === 0,
     },
     {
-      title: 'User Id',
+      title: 'UserId',
       dataIndex: 'userId',
       render: (value) => <div className="w-16 md:w-24 lg:w-36 2xl:w-full truncate">{value}</div>,
     },
     {
-      title: 'Action',
+      title: 'Hành động',
       align: 'center',
       render: (_, record) => (
         <Link to={`order-detail/${record.id}`}>
@@ -90,10 +95,11 @@ export default function Orders() {
   ]
 
   useEffect(() => {
-    searchKey ? setSearchLoading(true) : setLoading(true)
-    orderService
-      .getAll(currentPage, currentPageSize, searchKey)
-      .then((res) => {
+    const fetchData = async () => {
+      try {
+        searchKey ? setSearchLoading(true) : setLoading(true)
+        const res = await orderService.getAll(currentPage, currentPageSize, searchKey)
+
         var newPaymentMethod = [
           ...new Set(res.data?.items?.map((order) => order.paymentMethod)),
         ].map((value) => {
@@ -117,15 +123,15 @@ export default function Orders() {
 
         setOrders(res.data?.items)
         setTotalItems(res.data?.totalItems)
-      })
-      .catch((err) => {
-        message.error(err.response?.data || err.message)
+      } catch (error) {
+        message.error(showError(error))
         setSearchKey('')
-      })
-      .finally(() => {
+      } finally {
         setLoading(false)
         setSearchLoading(false)
-      })
+      }
+    }
+    fetchData()
   }, [currentPage, currentPageSize, searchKey])
 
   const handleSearch = (key) => key && key !== searchKey && setSearchKey(key)
@@ -134,21 +140,18 @@ export default function Orders() {
     <>
       <div className="pb-4">
         <Breadcrumb className="py-2" items={breadcrumbItems} />
-        <div className="py-2 px-4 bg-white rounded-lg drop-shadow">
-          <span className="text-gray-600 text-sm">
-            Tip search by Order ID: Each order is provided with a unique ID, which you can rely on
-            to find the exact product you need.
-          </span>
-          <div className="py-4 text-sm flex items-center space-x-2">
+        <div className="py-2 px-4 space-y-2 bg-white rounded-lg drop-shadow">
+          <div className="flex space-x-2 py-4">
             <Input.Search
               size="large"
               allowClear
+              placeholder="Mã đơn hàng, phương thức,..."
               loading={searchLoading}
               onSearch={(key) => handleSearch(key)}
               onChange={(e) => e.target.value === '' && setSearchKey('')}
             />
             <Button size="large" type="primary">
-              Export all order
+              Xuất đơn hàng
             </Button>
           </div>
 
@@ -163,9 +166,11 @@ export default function Orders() {
           />
 
           <Pagination
-            className="text-center mt-4"
+            hideOnSinglePage
+            className="py-4"
+            align="center"
             total={totalItems}
-            showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
+            showTotal={(total, range) => `${range[0]}-${range[1]} của ${total} đơn hàng`}
             defaultPageSize={currentPageSize}
             defaultCurrent={currentPage}
             showSizeChanger={true}

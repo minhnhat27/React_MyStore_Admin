@@ -1,7 +1,8 @@
 import { Breadcrumb, Button, Card, Form, Input, Popconfirm, Spin, Table, Tooltip, App } from 'antd'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { DeleteOutlined, EditTwoTone, HomeFilled } from '@ant-design/icons'
-import materialService from '../../services/products/materialService'
+import sizeService from '../../services/products/sizeService'
+import { useEffect } from 'react'
 import { showError } from '../../services/commonService'
 
 const breadcrumbItems = [
@@ -13,7 +14,7 @@ const breadcrumbItems = [
     title: 'Thuộc tính sản phẩm',
   },
   {
-    title: 'Chất liệu',
+    title: 'Kích cỡ',
   },
 ]
 
@@ -43,7 +44,7 @@ const columns = (handleDelete, onEdit) => [
   },
 ]
 
-export default function Material() {
+export default function Sizes() {
   const { message } = App.useApp()
   const [loading, setLoading] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
@@ -51,15 +52,15 @@ export default function Material() {
   const [form] = Form.useForm()
   const [isUpdate, setIsUpdate] = useState(false)
 
-  const [materials, setMaterials] = useState([])
-  const [materialId, setMaterialId] = useState('')
+  const [sizes, setSizes] = useState([])
+  const [sizeId, setSizeId] = useState('')
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const res = await materialService.getAll()
-        setMaterials(res.data)
+        const res = await sizeService.getAll()
+        setSizes(res.data)
       } catch (error) {
         message.error(showError(error))
       } finally {
@@ -72,11 +73,11 @@ export default function Material() {
   const handleSave = () => {
     setSaveLoading(true)
     if (isUpdate) {
-      materialService
-        .update(materialId, form.getFieldsValue())
+      sizeService
+        .update(sizeId, form.getFieldsValue())
         .then((res) => {
-          const newMaterials = materials.filter((item) => item.id !== materialId)
-          setMaterials([...newMaterials, res.data])
+          const newsizes = sizes.filter((item) => item.id !== sizeId)
+          setSizes([...newsizes, res.data])
           form.resetFields()
           setIsUpdate(false)
           message.success('Thành công')
@@ -84,10 +85,10 @@ export default function Material() {
         .catch((err) => message.error(showError(err)))
         .finally(() => setSaveLoading(false))
     } else {
-      materialService
+      sizeService
         .create(form.getFieldsValue())
         .then((res) => {
-          setMaterials([...materials, res.data])
+          setSizes([...sizes, res.data])
           form.resetFields()
           message.success('Thành công')
         })
@@ -97,10 +98,10 @@ export default function Material() {
   }
 
   const handleDelete = async (id) => {
-    await materialService
+    await sizeService
       .remove(id)
       .then(() => {
-        setMaterials(materials.filter((item) => item.id !== id))
+        setSizes(sizes.filter((item) => item.id !== id))
         message.success('Thành công')
       })
       .catch((err) => message.error(showError(err)))
@@ -109,12 +110,12 @@ export default function Material() {
   const onEdit = (record) => {
     form.setFieldsValue(record)
     setIsUpdate(true)
-    setMaterialId(record.id)
+    setSizeId(record.id)
   }
   const handleClear = () => {
     form.resetFields()
     setIsUpdate(false)
-    setMaterialId('')
+    setSizeId('')
   }
   return (
     <>
@@ -124,7 +125,7 @@ export default function Material() {
           <Card className="md:col-span-2 drop-shadow">
             <Table
               columns={columns(handleDelete, onEdit)}
-              dataSource={materials}
+              dataSource={sizes}
               rowKey={(record) => record.id}
               className="overflow-x-auto"
               rowHoverable
@@ -132,12 +133,12 @@ export default function Material() {
               loading={loading}
             />
           </Card>
-          <Card title="Chất liệu" className="h-fit bg-white drop-shadow">
+          <Card title="Size" className="h-fit bg-white drop-shadow">
             <Form layout="vertical" form={form} disabled={saveLoading} onFinish={handleSave}>
               <Form.Item
-                label="Tên chất liệu"
+                label="Tên size"
                 name="name"
-                rules={[{ required: true, message: 'Vui lòng nhập tên' }]}
+                rules={[{ required: true, message: 'Vui lòng nhập tên size' }]}
               >
                 <Input
                   count={{
@@ -146,7 +147,7 @@ export default function Material() {
                   }}
                   maxLength={25}
                   size="large"
-                  placeholder="Vải, thun, cotton,..."
+                  placeholder="S, M, 24, 25..."
                   allowClear
                 />
               </Form.Item>

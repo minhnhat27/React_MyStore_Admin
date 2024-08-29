@@ -23,23 +23,25 @@ import {
   ProductOutlined,
   DeploymentUnitOutlined,
 } from '@ant-design/icons'
+import Sizes from '../pages/ProductAttributes/Sizes'
 
 export const navigateItems = [
-  { key: '/home', icon: <PieChartOutlined />, label: 'Dashboard' },
-  { key: '/orders-management', icon: <ContainerOutlined />, label: 'Orders' },
-  { key: '/products-management', icon: <ProductOutlined />, label: 'Products' },
-  { key: '/users-management', icon: <UserOutlined />, label: 'Users' },
+  { key: '/home', icon: <PieChartOutlined />, label: 'Trang chủ' },
+  { key: '/orders-management', icon: <ContainerOutlined />, label: 'Đơn hàng' },
+  { key: '/products-management', icon: <ProductOutlined />, label: 'Sản phẩm' },
+  { key: '/users-management', icon: <UserOutlined />, label: 'Người dùng' },
   {
     key: 'sub1',
-    label: 'Product Attributes',
+    label: 'Thuộc tính sản phẩm',
     icon: <DeploymentUnitOutlined />,
     children: [
-      { key: '/brands-management', label: 'Brands' },
-      { key: '/categories-management', label: 'Categories' },
-      { key: '/materials-management', label: 'Materials' },
+      { key: '/brands-management', label: 'Thương hiệu' },
+      { key: '/categories-management', label: 'Danh mục' },
+      { key: '/materials-management', label: 'Chất liệu' },
+      { key: '/sizes-management', label: 'Kích cỡ' },
     ],
   },
-  { key: '/', icon: <LoginOutlined />, label: 'Login' },
+  { key: '/', icon: <LoginOutlined />, label: 'Đăng nhập' },
 ]
 
 export const publicRoutes = [
@@ -62,6 +64,7 @@ export const privateRoutes = [
   { path: '/brands-management', component: Brand },
   { path: '/categories-management', component: Category },
   { path: '/materials-management', component: Materials },
+  { path: '/sizes-management', component: Sizes },
 ]
 
 export const generatePublicRoutes = (isAuthenticated) => {

@@ -1,36 +1,43 @@
-import { useAntdMessage } from '../../App'
-import { Breadcrumb, Button, Card, Form, Input, Popconfirm, Spin, Table, Tooltip } from 'antd'
+import { Breadcrumb, Button, Card, Form, Input, Popconfirm, Spin, Table, Tooltip, App } from 'antd'
 import { useState } from 'react'
-import { DeleteOutlined, EditTwoTone } from '@ant-design/icons'
+import { DeleteOutlined, EditTwoTone, HomeFilled } from '@ant-design/icons'
 import categoryService from '../../services/products/categoryService'
 import { useEffect } from 'react'
 import { showError } from '../../services/commonService'
 
 const breadcrumbItems = [
   {
-    title: 'Product Attributes',
+    path: '/',
+    title: <HomeFilled />,
   },
   {
-    title: 'Categories',
+    title: 'Thuộc tính sản phẩm',
+  },
+  {
+    title: 'Danh mục',
   },
 ]
 
 const columns = (handleDelete, onEdit) => [
   {
-    title: 'Name',
+    title: 'Tên',
     dataIndex: 'name',
     align: 'center',
   },
   {
-    title: 'Action',
+    title: 'Hành động',
     align: 'center',
     render: (_, record) => (
-      <div className="space-x-4 cursor-pointer select-none text-lg">
-        <Tooltip title="Edit">
-          <EditTwoTone onClick={() => onEdit(record)} />
+      <div className="cursor-pointer select-none text-lg inline-flex space-x-2">
+        <Tooltip title="Chỉnh sửa">
+          <Button className="flex items-center" onClick={() => onEdit(record)}>
+            <EditTwoTone />
+          </Button>
         </Tooltip>
-        <Popconfirm title="Sure to delete?" onConfirm={() => handleDelete(record.id)}>
-          <DeleteOutlined className="text-red-500" />
+        <Popconfirm title="Xác nhận xóa?" onConfirm={() => handleDelete(record.id)}>
+          <Button danger className="flex items-center">
+            <DeleteOutlined className="text-red-500" />
+          </Button>
         </Popconfirm>
       </div>
     ),
@@ -38,7 +45,7 @@ const columns = (handleDelete, onEdit) => [
 ]
 
 export default function Category() {
-  const { showMessage } = useAntdMessage()
+  const { message } = App.useApp()
   const [loading, setLoading] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
 
@@ -49,13 +56,19 @@ export default function Category() {
   const [categoryId, setCategoryId] = useState('')
 
   useEffect(() => {
-    setLoading(true)
-    categoryService
-      .getAll()
-      .then((res) => setCategories(res.data))
-      .catch((err) => showMessage.error(showError(err)))
-      .finally(() => setLoading(false))
-  }, [showMessage])
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const res = await categoryService.getAll()
+        setCategories(res.data)
+      } catch (error) {
+        message.error(showError(error))
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [message])
 
   const handleSave = () => {
     setSaveLoading(true)
@@ -67,9 +80,9 @@ export default function Category() {
           setCategories([...newCategories, res.data])
           form.resetFields()
           setIsUpdate(false)
-          showMessage.success('Successfully')
+          message.success('Thành công')
         })
-        .catch((err) => showMessage.error(showError(err)))
+        .catch((err) => message.error(showError(err)))
         .finally(() => setSaveLoading(false))
     } else {
       categoryService
@@ -77,9 +90,9 @@ export default function Category() {
         .then((res) => {
           setCategories([...categories, res.data])
           form.resetFields()
-          showMessage.success('Successfully')
+          message.success('Thành công')
         })
-        .catch((err) => showMessage.error(showError(err)))
+        .catch((err) => message.error(showError(err)))
         .finally(() => setSaveLoading(false))
     }
   }
@@ -89,9 +102,9 @@ export default function Category() {
       .remove(id)
       .then(() => {
         setCategories(categories.filter((item) => item.id !== id))
-        showMessage.success('Successfully')
+        message.success('Thành công')
       })
-      .catch((err) => showMessage.error(showError(err)))
+      .catch((err) => message.error(showError(err)))
   }
 
   const onEdit = (record) => {
@@ -109,7 +122,6 @@ export default function Category() {
       <div className="pb-4">
         <Breadcrumb className="py-2" items={breadcrumbItems} />
         <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
-          {/* <div className="p-2 h-fit md:col-span-2 bg-white rounded-lg drop-shadow"></div> */}
           <Card className="md:col-span-2 drop-shadow">
             <Table
               columns={columns(handleDelete, onEdit)}
@@ -121,33 +133,28 @@ export default function Category() {
               loading={loading}
             />
           </Card>
-          <Card className="h-fit bg-white drop-shadow">
-            <span className="text-gray-700 font-bold">Add new category</span>
-            <Form form={form} disabled={saveLoading} onFinish={handleSave}>
-              <div>
-                <label
-                  htmlFor="description "
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Category name <span className="text-red-500 font-bold text-lg">*</span>
-                </label>
-                <Form.Item name="name" rules={[{ required: true, message: 'Name is required' }]}>
-                  <Input
-                    count={{
-                      show: true,
-                      max: 30,
-                    }}
-                    maxLength={30}
-                    size="large"
-                    placeholder="Category name..."
-                    allowClear
-                  />
-                </Form.Item>
-              </div>
+          <Card title="Danh mục" className="h-fit bg-white drop-shadow">
+            <Form layout="vertical" form={form} disabled={saveLoading} onFinish={handleSave}>
+              <Form.Item
+                label="Danh mục"
+                name="name"
+                rules={[{ required: true, message: 'Vui lòng nhập tên' }]}
+              >
+                <Input
+                  count={{
+                    show: true,
+                    max: 25,
+                  }}
+                  maxLength={25}
+                  size="large"
+                  placeholder="Áo thun..."
+                  allowClear
+                />
+              </Form.Item>
 
               <div className="grid grid-cols-2 gap-2">
                 <Button type="primary" htmlType="submit" className="w-full" size="large">
-                  {saveLoading ? <Spin /> : isUpdate ? 'Update' : 'Save'}
+                  {saveLoading ? <Spin /> : isUpdate ? 'Cập nhật' : 'Thêm'}
                 </Button>
                 <Button
                   disabled={!isUpdate || saveLoading}

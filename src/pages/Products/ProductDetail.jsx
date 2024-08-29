@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import {
-  Breadcrumb,
   Button,
   Card,
   ConfigProvider,
@@ -12,38 +11,41 @@ import {
   Spin,
   Switch,
   Upload,
+  App,
 } from 'antd'
 import TextArea from 'antd/es/input/TextArea'
-import { CheckOutlined, CloseOutlined, PlusOutlined } from '@ant-design/icons'
+import { CheckOutlined, CloseOutlined, HomeFilled, PlusOutlined } from '@ant-design/icons'
 import productService from '../../services/products/productService'
 import {
   gender,
   getBase64,
-  transformDataToLabelValue,
   isEmptyObject,
   toImageSrc,
   sizes,
   showError,
-  itemRender,
+  toTextLabel,
 } from '../../services/commonService'
-import { useAntdMessage, useLoading } from '../../App'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLoading } from '../../App'
+import { Link, useParams } from 'react-router-dom'
+import BreadcrumbLink from '../../components/BreadcrumbLink'
 
 const breadcrumbItems = (id) => [
+  { path: '/', title: <HomeFilled /> },
   {
     path: '/products-management',
-    title: 'Product List',
+    title: 'Sản phẩm',
   },
   {
-    title: `Product detail #${id}`,
+    title: `Chi tiết sản phẩm #${id}`,
   },
 ]
 
 export default function ProductDetail() {
-  const { setIsLoading } = useLoading()
-  const { showMessage } = useAntdMessage()
   const { id } = useParams()
-  const navigate = useNavigate()
+  const { setIsLoading } = useLoading()
+  const { message } = App.useApp()
+
+  const [form] = Form.useForm()
 
   const [loading, setLoading] = useState(false)
   const [updateLoading, setUpdateLoading] = useState(false)
@@ -51,12 +53,11 @@ export default function ProductDetail() {
   const [productAttributes, setProductAttributes] = useState({})
   const [update, setUpdate] = useState(false)
 
-  const [form] = Form.useForm()
-  const [size, setSize] = useState([])
   const [sizeList, setSizeList] = useState([])
+  const [fileList, setFileList] = useState([])
+
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewImage, setPreviewImage] = useState('')
-  const [fileList, setFileList] = useState([])
 
   const handlePreview = async (file) => {
     if (!file.url && !file.preview) {
@@ -68,42 +69,43 @@ export default function ProductDetail() {
   const handleChangeFile = ({ fileList: newFileList }) => setFileList(newFileList)
 
   useEffect(() => {
-    setIsLoading(true)
-    setLoading(true)
-    try {
-      const fetchData = async () => {
-        try {
-          const data = await productService.fetchProductAttributes()
-          Object.keys(data).forEach((key) => (data[key] = transformDataToLabelValue(data[key])))
-          setProductAttributes(data)
-          setSize(sizes)
-          setLoading(false)
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        setIsLoading(true)
 
-          const res = await productService.getProduct(id)
-          form.setFieldsValue(res.data)
-          setSizeList(res.data.sizesAndQuantities)
+        const data = await productService.fetchProductAttributes()
+        Object.keys(data).forEach((key) => (data[key] = toTextLabel(data[key])))
+        setProductAttributes(data)
+        setLoading(false)
 
-          const files = res.data.imageUrls.map((item) => ({
-            originUrl: item,
-            url: toImageSrc(item),
-          }))
-          setFileList(files)
+        const res = await productService.getProduct(id)
+        form.setFieldsValue(res.data)
 
-          setIsLoading(false)
-        } catch (error) {}
+        const sizeIds = res.data.sizesAndQuantities?.map((item) => item.sizeId)
+        form.setFieldValue('sizes', sizeIds)
+
+        setSizeList(res.data.sizesAndQuantities)
+
+        const files = res.data.imageUrls.map((item) => ({
+          originUrl: item,
+          url: toImageSrc(item),
+        }))
+        setFileList(files)
+      } catch (error) {
+      } finally {
+        setIsLoading(false)
       }
-      fetchData()
-    } catch (err) {
-      setLoading(false)
-      setIsLoading(false)
     }
+    fetchData()
   }, [id, form, setIsLoading])
 
   const handleSelectSize = (value) => {
-    var items = value.map((item) => ({
-      sizeId: size.find((e) => e.value === item)?.value,
-    }))
-    setSizeList(items)
+    const newListSize = value.map((item) => {
+      const exist = sizeList.find((e) => e.sizeId === item)
+      return exist ? exist : { sizeId: item }
+    })
+    setSizeList(newListSize)
   }
 
   const handleSetSizeValue = (obj) => {
@@ -111,6 +113,7 @@ export default function ProductDetail() {
       item.sizeId === obj.sizeId ? { ...item, ...obj } : item,
     )
     setSizeList(newList)
+    //console.log(newList)
     setUpdate(true)
   }
 
@@ -148,22 +151,22 @@ export default function ProductDetail() {
 
       try {
         await productService.update(id, formData)
-        showMessage.success('Successfully')
+        message.success('Successfully')
         setUpdate(false)
       } catch (error) {
-        showMessage.error(showError(error))
+        message.error(showError(error))
       } finally {
         setUpdateLoading(false)
       }
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
 
   return (
     <>
       <div className="pb-4">
-        <Breadcrumb className="py-2" itemRender={itemRender} items={breadcrumbItems(id)} />
+        <BreadcrumbLink breadcrumbItems={breadcrumbItems(id)} />
         <Form
           form={form}
           onValuesChange={() => setUpdate(true)}
@@ -174,9 +177,9 @@ export default function ProductDetail() {
         >
           <Card className="drop-shadow h-fit">
             <Form.Item
-              label="Name"
+              label="Tên sản phẩm"
               name="name"
-              rules={[{ required: true, message: 'Product name is required' }]}
+              rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm' }]}
             >
               <Input
                 count={{
@@ -185,55 +188,50 @@ export default function ProductDetail() {
                 }}
                 maxLength={50}
                 size="large"
-                placeholder="Product name..."
+                placeholder="Abc..."
               />
             </Form.Item>
             <div className="grid gap-2 md:grid-cols-3">
               <Form.Item
-                label="Brand"
+                label="Thương hiệu"
                 name="brandId"
-                rules={[{ required: true, message: 'Brand is required' }]}
+                rules={[{ required: true, message: 'Vui lòng chọn thương hiệu' }]}
               >
                 <Select
                   loading={loading}
                   className="w-full"
                   size="large"
                   optionFilterProp="label"
-                  placeholder="Choose brand"
+                  placeholder="Chọn"
                   options={productAttributes.brands}
                 />
               </Form.Item>
               <Form.Item
-                label="Category"
+                label="Danh mục"
                 name="categoryId"
-                rules={[{ required: true, message: 'Category is required' }]}
+                rules={[{ required: true, message: 'Vui lòng chọn danh mục' }]}
               >
                 <Select
                   loading={loading}
                   className="w-full"
                   size="large"
                   optionFilterProp="label"
-                  placeholder="Choose category"
+                  placeholder="Chọn"
                   options={productAttributes.categories}
                 />
               </Form.Item>
               <Form.Item
-                label="Gender"
+                label="Giới tính"
                 name="gender"
-                rules={[{ required: true, message: 'Gender is required' }]}
+                rules={[{ required: true, message: 'Vui lòng chọn giới tính' }]}
               >
-                <Select
-                  className="w-full"
-                  size="large"
-                  placeholder="Choose gender"
-                  options={gender}
-                />
+                <Select className="w-full" size="large" placeholder="Chọn" options={gender} />
               </Form.Item>
             </div>
             <Form.Item
-              label="Material"
+              label="Chất liệu"
               name="materialIds"
-              rules={[{ required: true, message: 'Materials is required' }]}
+              rules={[{ required: true, message: 'Chọn ít nhất 1 chất liệu' }]}
             >
               <Select
                 loading={loading}
@@ -241,25 +239,25 @@ export default function ProductDetail() {
                 mode="multiple"
                 size="large"
                 optionFilterProp="label"
-                placeholder="Choose materials"
+                placeholder="Chọn chất liệu"
                 options={productAttributes.materials}
               />
             </Form.Item>
-            <Form.Item label="Description" name="description">
+            <Form.Item label="Mô tả sản phẩm" name="description">
               <TextArea
                 id="description"
                 rows={6}
                 count={{ show: true, max: 500 }}
-                placeholder="Product description..."
+                placeholder="Áo đẹp..."
                 maxLength={500}
               />
             </Form.Item>
           </Card>
           <Card className="drop-shadow h-fit">
             <Form.Item
-              label="Upload Images"
+              label="Hình ảnh"
               name="imageUrls"
-              rules={[{ required: true, message: 'Minimun 1 image' }]}
+              rules={[{ required: true, message: 'Tối thiểu 1 ảnh' }]}
               getValueFromEvent={(e) => e.fileList}
             >
               <Upload
@@ -275,7 +273,7 @@ export default function ProductDetail() {
                 {fileList.length >= 9 ? null : (
                   <button type="button">
                     <PlusOutlined />
-                    <div>Upload</div>
+                    <div>Tải lên</div>
                   </button>
                 )}
               </Upload>
@@ -293,21 +291,22 @@ export default function ProductDetail() {
                 src={previewImage}
               />
             )}
+
             <div className="grid grid-cols-2 gap-2">
               <Form.Item
+                label="Giá"
                 name="price"
-                label="Price"
-                rules={[{ required: true, message: 'Price is required' }]}
+                rules={[{ required: true, message: 'Vui lòng nhập giá' }]}
               >
                 <InputNumber
                   size="large"
                   className="w-full col-span-2"
-                  formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  formatter={(value) => value.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                   parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
                   placeholder="Price..."
                 />
               </Form.Item>
-              <Form.Item name="discountPercent" label="Giảm giá">
+              <Form.Item label="Phần trăm giảm giá" name="discountPercent">
                 <InputNumber
                   size="large"
                   min={0}
@@ -316,21 +315,22 @@ export default function ProductDetail() {
                   defaultValue={0}
                   formatter={(value) => `${value}%`}
                   parser={(value) => value?.replace('%', '')}
-                  placeholder="Discount..."
+                  placeholder="5, 10,..."
                 />
               </Form.Item>
             </div>
+
             <Form.Item
-              label="Add size"
-              name="sizeIds"
-              rules={[{ required: true, message: 'Size is required' }]}
+              label="Size"
+              name="sizes"
+              rules={[{ required: true, message: 'Vui lòng chọn size' }]}
               className="space-y-2"
             >
               <Select
                 className="w-full"
                 size="large"
                 optionFilterProp="label"
-                placeholder="Add size"
+                placeholder="Thêm size"
                 onChange={handleSelectSize}
                 options={sizes}
                 autoClearSearchValue
@@ -350,12 +350,12 @@ export default function ProductDetail() {
                       handleSetSizeValue({ sizeId: item.sizeId, inStock: value })
                     }
                     type="number"
-                    placeholder="Quantity..."
+                    placeholder="Số lượng kho..."
                   />
                 </div>
               ))}
             </div>
-            <Form.Item label="Enable" name="enable" valuePropName="checked">
+            <Form.Item label="Kích hoạt sản phẩm" name="enable" valuePropName="checked">
               <Switch
                 checkedChildren={<CheckOutlined />}
                 unCheckedChildren={<CloseOutlined />}
@@ -383,14 +383,11 @@ export default function ProductDetail() {
                   },
                 }}
               >
-                <Button
-                  type="primary"
-                  onClick={() => navigate(-1)}
-                  className="w-full bg-gray-500"
-                  size="large"
-                >
-                  Back
-                </Button>
+                <Link to={-1}>
+                  <Button type="primary" className="w-full bg-gray-500" size="large">
+                    Trở về
+                  </Button>
+                </Link>
               </ConfigProvider>
             </div>
           </Card>

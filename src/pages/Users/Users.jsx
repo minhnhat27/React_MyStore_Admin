@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import {
-  Breadcrumb,
   Button,
   DatePicker,
   Form,
@@ -17,23 +16,28 @@ import {
 } from 'antd'
 import userService from '../../services/users/userService'
 import { formatDate, showError } from '../../services/commonService'
-import { LockOutlined, UnlockOutlined } from '@ant-design/icons'
+import { HomeFilled, LockOutlined, UnlockOutlined } from '@ant-design/icons'
 import { Link } from 'react-router-dom'
 
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
+import BreadcrumbLink from '../../components/BreadcrumbLink'
 dayjs.extend(customParseFormat)
 const dateFormat = 'YYYY-MM-DD'
 
 const breadcrumbItems = [
   {
-    title: 'Users',
+    path: '/',
+    title: <HomeFilled />,
+  },
+  {
+    title: 'Người dùng',
   },
 ]
 
 const columns = (onLockOut, handleUnlock) => [
   {
-    title: 'Fullname',
+    title: 'Họ và tên',
     dataIndex: 'fullname',
     width: 100,
     sorter: (a, b) => a.fullname.localeCompare(b.fullname),
@@ -45,41 +49,41 @@ const columns = (onLockOut, handleUnlock) => [
     width: 100,
   },
   {
-    title: 'Email Confirmed',
+    title: 'Xác nhận Email',
     dataIndex: 'emailConfirmed',
     render: (value) => (
       <Tag color={value ? 'green' : 'red'} key={value}>
-        {value ? 'CONFIRMED' : 'UNCONFIRMED'}
+        {value ? 'Đã xác nhận' : 'Chưa xác nhận'}
       </Tag>
     ),
     filters: [
-      { value: true, text: 'Confirmed' },
-      { value: false, text: 'Unconfirmed' },
+      { value: true, text: 'Đã xác nhận' },
+      { value: false, text: 'Chưa xác nhận' },
     ],
     onFilter: (value, record) => record.emailConfirmed === value,
   },
   {
-    title: 'Phone Number',
+    title: 'Số điện thoại',
     dataIndex: 'phoneNumber',
   },
   {
-    title: 'Created At',
+    title: 'Ngày tạo',
     dataIndex: 'createdAt',
     render: (value) => value !== null && formatDate(value),
     sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
   },
   {
-    title: 'Updated At',
+    title: 'Cập nhật gần nhất',
     dataIndex: 'updatedAt',
     render: (value) => value !== null && formatDate(value),
     sorter: (a, b) => new Date(a.updatedAt) - new Date(b.updatedAt),
   },
   {
-    title: 'Lockout End',
+    title: 'Tình trạng',
     dataIndex: 'lockoutEnd',
     filters: [
-      { value: false, text: 'Active' },
-      { value: true, text: 'Locked' },
+      { value: false, text: 'Hoạt động' },
+      { value: true, text: 'Bị vô hiệu' },
     ],
     onFilter: (value, record) => record.lockedOut === value,
     render: (value) => {
@@ -90,31 +94,39 @@ const columns = (onLockOut, handleUnlock) => [
             {date.getFullYear() >= 3000 ? 'Forever' : formatDate(value)}
           </span>
         )
-      }
+      } else
+        return (
+          <Tag color="blue" key={value}>
+            Hoạt động
+          </Tag>
+        )
     },
   },
   {
-    title: 'Action',
+    title: 'Hành động',
     align: 'center',
-    render: (_, record) =>
-      record.lockedOut ? (
-        <Popconfirm title="Are you sure?" onConfirm={() => handleUnlock(record.id)}>
-          <Button type="primary" className="flex items-center">
-            <UnlockOutlined />
-          </Button>
-        </Popconfirm>
-      ) : (
-        <Tooltip title="Lock out">
-          <Button
-            onClick={() => onLockOut(record)}
-            danger
-            type="primary"
-            className="flex items-center"
-          >
-            <LockOutlined />
-          </Button>
-        </Tooltip>
-      ),
+    render: (_, record) => (
+      <div className="inline-flex">
+        {record.lockedOut ? (
+          <Popconfirm title="Xác nhận mở khóa?" onConfirm={() => handleUnlock(record.id)}>
+            <Button type="primary" className="flex items-center">
+              <UnlockOutlined />
+            </Button>
+          </Popconfirm>
+        ) : (
+          <Tooltip title="Khóa tài khoản">
+            <Button
+              onClick={() => onLockOut(record)}
+              danger
+              type="primary"
+              className="flex items-center"
+            >
+              <LockOutlined />
+            </Button>
+          </Tooltip>
+        )}
+      </div>
+    ),
   },
 ]
 
@@ -214,7 +226,7 @@ export default function Users() {
   return (
     <>
       <Modal
-        title="Lock Out"
+        title="Khóa tài khoản"
         open={isLockoutModel}
         okType="danger"
         okButtonProps={{ loading: isLockOutLoading, type: 'primary' }}
@@ -224,16 +236,15 @@ export default function Users() {
         maskClosable={false}
       >
         <div className="space-y-2">
-          <p>Are you sure you want to lock out this user?</p>
           <Radio.Group onChange={onLockoutChange} value={valueLockout}>
             <Space direction="vertical">
-              <Radio value={1}>Forever</Radio>
-              <Radio value={2}>Lockout end</Radio>
+              <Radio value={1}>Vĩnh viễn</Radio>
+              <Radio value={2}>Chọn thời gian mở khóa</Radio>
               {valueLockout === 2 && (
                 <Form form={form}>
                   <Form.Item
                     name="endDate"
-                    rules={[{ required: true, message: 'End date is required' }]}
+                    rules={[{ required: true, message: 'Vui lòng nhập ngày hết hạn' }]}
                   >
                     <DatePicker allowClear={false} minDate={dayjs(new Date().getTime())} />
                   </Form.Item>
@@ -244,15 +255,12 @@ export default function Users() {
         </div>
       </Modal>
       <div className="pb-4">
-        <Breadcrumb className="py-2" items={breadcrumbItems} />
+        <BreadcrumbLink breadcrumbItems={breadcrumbItems} />
         <div className="py-2 px-4 space-y-2 bg-white rounded-lg drop-shadow">
-          <span className="text-gray-600 text-sm">
-            Tip search by User ID: Each user is provided with a unique ID, which you can rely on to
-            find the exact product you need.
-          </span>
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 py-4">
             <Input.Search
               size="large"
+              placeholder="Tên, Email,..."
               allowClear
               loading={searchLoading}
               onSearch={(key) => handleSearch(key)}
@@ -276,9 +284,11 @@ export default function Users() {
           />
 
           <Pagination
-            className="text-center mt-4"
+            hideOnSinglePage
+            className="py-4"
+            align="center"
             total={totalItems}
-            showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} items`}
+            showTotal={(total, range) => `${range[0]}-${range[1]} của ${total} sản phẩm`}
             defaultPageSize={currentPageSize}
             defaultCurrent={currentPage}
             showSizeChanger={true}
