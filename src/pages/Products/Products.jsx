@@ -32,15 +32,16 @@ const columns = (handleChangeEnable, handleDeleteProduct, brandNames, categoryNa
         height={80}
         className="object-contain"
         src={toImageSrc(url)}
-        alt=""
-        loading="lazy"
+        alt="Ảnh sản phẩm"
       />
     ),
   },
   {
     title: 'Tên',
     dataIndex: 'name',
+    render: (value) => <div className="w-24 md:w-32 2xl:w-full truncate">{value}</div>,
     sorter: (a, b) => a.name.localeCompare(b.name),
+    width: 100,
   },
   {
     title: 'Giá',

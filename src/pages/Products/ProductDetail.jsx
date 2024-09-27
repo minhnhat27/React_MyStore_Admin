@@ -12,20 +12,25 @@ import {
   Switch,
   Upload,
   App,
+  Flex,
 } from 'antd'
 import TextArea from 'antd/es/input/TextArea'
-import { CheckOutlined, CloseOutlined, HomeFilled, PlusOutlined } from '@ant-design/icons'
+import {
+  CheckOutlined,
+  CloseOutlined,
+  HomeFilled,
+  MinusCircleOutlined,
+  PlusOutlined,
+} from '@ant-design/icons'
 import productService from '../../services/products/productService'
 import {
   gender,
   getBase64,
   isEmptyObject,
   toImageSrc,
-  sizes,
   showError,
   toTextLabel,
 } from '../../services/commonService'
-import { useLoading } from '../../App'
 import { Link, useParams } from 'react-router-dom'
 import BreadcrumbLink from '../../components/BreadcrumbLink'
 
@@ -42,7 +47,6 @@ const breadcrumbItems = (id) => [
 
 export default function ProductDetail() {
   const { id } = useParams()
-  const { setIsLoading } = useLoading()
   const { message } = App.useApp()
 
   const [form] = Form.useForm()
@@ -54,10 +58,14 @@ export default function ProductDetail() {
   const [update, setUpdate] = useState(false)
 
   const [sizeList, setSizeList] = useState([])
-  const [fileList, setFileList] = useState([])
+  const [sizeListValue, setSizeListValue] = useState([])
 
+  const [fileList, setFileList] = useState([])
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewImage, setPreviewImage] = useState('')
+
+  const [colorImages, setColorImages] = useState([])
+  const colors = Form.useWatch('colors', form) || []
 
   const handlePreview = async (file) => {
     if (!file.url && !file.preview) {
@@ -72,69 +80,144 @@ export default function ProductDetail() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        setIsLoading(true)
+        const pAttr = await productService.fetchProductAttributes()
+        Object.keys(pAttr).forEach((key) => (pAttr[key] = toTextLabel(pAttr[key])))
+        setProductAttributes(pAttr)
 
-        const data = await productService.fetchProductAttributes()
-        Object.keys(data).forEach((key) => (data[key] = toTextLabel(data[key])))
-        setProductAttributes(data)
-        setLoading(false)
+        const { data } = await productService.getProduct(id)
+        form.setFieldsValue(data)
 
-        const res = await productService.getProduct(id)
-        form.setFieldsValue(res.data)
-
-        const sizeIds = res.data.sizesAndQuantities?.map((item) => item.sizeId)
+        const sizeIds = data.colorSizes[0].sizeInStocks?.map((item) => item.sizeId)
         form.setFieldValue('sizes', sizeIds)
 
-        setSizeList(res.data.sizesAndQuantities)
+        const sizes = data.colorSizes[0].sizeInStocks?.map((item) => ({
+          sizeId: item.sizeId,
+          label: pAttr.sizes.find((e) => e.id === item.sizeId)?.label,
+        }))
+        setSizeList(sizes)
+        setSizeListValue(data.colorSizes)
 
-        const files = res.data.imageUrls.map((item) => ({
+        const colors = data.colorSizes.map((item) => ({
+          id: item.id,
+          colorName: item.colorName,
+          image: item.imageUrl,
+        }))
+        form.setFieldValue('colors', colors)
+
+        const colorFiles = data.colorSizes?.map((item) => ({
+          originUrl: item.imageUrl,
+          url: toImageSrc(item.imageUrl),
+          name: item.imageUrl.substring(item.imageUrl.lastIndexOf('\\') + 1),
+        }))
+
+        setColorImages(colorFiles)
+
+        const files = data.imageUrls?.map((item) => ({
           originUrl: item,
           url: toImageSrc(item),
         }))
         setFileList(files)
       } catch (error) {
       } finally {
-        setIsLoading(false)
+        setLoading(false)
       }
     }
     fetchData()
-  }, [id, form, setIsLoading])
+  }, [id, form])
 
-  const handleSelectSize = (value) => {
-    const newListSize = value.map((item) => {
-      const exist = sizeList.find((e) => e.sizeId === item)
-      return exist ? exist : { sizeId: item }
+  const handleChangeColorFile = ({ fileList: newFileList }, key) => {
+    const colors = [...colorImages]
+    colors[key] = newFileList[0]
+    setColorImages(colors)
+  }
+
+  const handleSelectSize = (listSizeId, valueLabelObj) => {
+    setSizeList(valueLabelObj.map((item) => ({ sizeId: item.value, label: item.label })))
+
+    const newL = colors.map((color) => {
+      const sizeInStocks = listSizeId.map((sizeId) => {
+        const exist = sizeListValue
+          ?.find((e) => e.colorName === color?.colorName)
+          ?.sizeInStocks?.find((e) => e.sizeId === sizeId)
+
+        if (exist) {
+          return { ...exist }
+        } else return { sizeId: sizeId }
+      })
+      return { colorName: color.colorName, sizeInStocks: sizeInStocks }
     })
-    setSizeList(newListSize)
+
+    // const newList = colors.map((color) => {
+    //   const exist = sizeListValue.find((e) => e.colorName === color?.colorName)
+    //   if (exist) {
+    //     const updatedSizeInStocks = [...exist.sizeInStocks]
+    //     listSizeId.forEach((sizeId) => {
+    //       const sizeExists = updatedSizeInStocks.some((stock) => stock.sizeId === sizeId)
+    //       if (!sizeExists) updatedSizeInStocks.push({ sizeId: sizeId })
+    //     })
+    //     return { ...exist, sizeInStocks: updatedSizeInStocks }
+    //   } else {
+    //     const sizeInStocks = listSizeId.map((sizeId) => ({ sizeId: sizeId }))
+    //     return { colorName: color.colorName, sizeInStocks: sizeInStocks }
+    //   }
+    // })
+
+    setSizeListValue(newL)
   }
 
-  const handleSetSizeValue = (obj) => {
-    const newList = sizeList.map((item) =>
-      item.sizeId === obj.sizeId ? { ...item, ...obj } : item,
-    )
-    setSizeList(newList)
-    //console.log(newList)
-    setUpdate(true)
+  const handleSetSizeValue = (obj, index) => {
+    const newList = [...sizeListValue]
+    const sizeInStocks = newList[index].sizeInStocks.find((e) => e.sizeId === obj.sizeId)
+
+    if (sizeInStocks) sizeInStocks.inStock = obj.inStock
+
+    setSizeListValue(newList)
   }
 
-  const updateProduct = async () => {
+  const onChangeColor = (value, index) => {
+    if (sizeList.length > 0) {
+      const newList = [...sizeListValue]
+      if (newList[index]?.colorName) {
+        newList[index].colorName = value
+      } else {
+        newList[index] = {}
+        newList[index].colorName = value
+
+        sizeList.forEach((item) => {
+          if (!newList[index]?.sizeInStocks) newList[index].sizeInStocks = []
+          if (!newList[index]?.sizeInStocks?.some((e) => e.sizeId === item.sizeId)) {
+            newList[index].sizeInStocks.push({ sizeId: item.sizeId })
+          }
+        })
+      }
+      setSizeListValue(newList)
+    }
+  }
+
+  const handleRemoveColor = (index, key) => {
+    const newImages = [...colorImages]
+    newImages[key] = null
+    setColorImages(newImages)
+
+    if (colors.length === 1) {
+      setSizeList([])
+      form.setFieldValue('sizes', [])
+    }
+    const newList = [...sizeListValue]
+    setSizeListValue(newList.filter((_, i) => i !== index))
+  }
+
+  const updateProduct = async (values) => {
     try {
-      setUpdateLoading(true)
+      // setUpdateLoading(true)
       const formData = new FormData()
 
       fileList.forEach((item, i) =>
         item.originFileObj
-          ? formData.append(`images[${i}]`, item.originFileObj)
+          ? formData.append(`images`, item.originFileObj)
           : formData.append(`imageUrls[${i}]`, item.originUrl),
       )
 
-      sizeList.forEach((item, i) => {
-        Object.keys(item).forEach((key) => {
-          formData.append(`sizesAndQuantities[${i}].${key}`, item[key])
-        })
-      })
-
-      const values = form.getFieldsValue()
       const data = {
         ...values,
         enable: values.enable ?? true,
@@ -142,16 +225,30 @@ export default function ProductDetail() {
         discountPercent: values.discountPercent ?? 0,
       }
       delete data.imageUrls
-      delete data.sizeIds
+      delete data.sizes
 
-      data.materialIds.forEach((item, i) => formData.append(`materialIds[${i}]`, item))
+      data.materialIds.forEach((id, i) => formData.append(`materialIds[${i}]`, id))
       delete data.materialIds
+
+      sizeListValue.forEach((color, index) => {
+        formData.append(`colorSizes[${index}].colorName`, color.colorName)
+
+        colors[index]?.image[0]?.originFileObj
+          ? formData.append(`colorSizes[${index}].image`, colors[index]?.image[0]?.originFileObj)
+          : formData.append(`colorSizes[${index}].id`, color.id)
+
+        color.sizeInStocks.forEach((size, sizeIndex) => {
+          formData.append(`colorSizes[${index}].sizeInStocks[${sizeIndex}].sizeId`, size.sizeId)
+          formData.append(`colorSizes[${index}].sizeInStocks[${sizeIndex}].inStock`, size.inStock)
+        })
+      })
+      delete data.colors
 
       Object.keys(data).forEach((key) => formData.append(key, data[key]))
 
       try {
         await productService.update(id, formData)
-        message.success('Successfully')
+        message.success('Thành công')
         setUpdate(false)
       } catch (error) {
         message.error(showError(error))
@@ -169,13 +266,13 @@ export default function ProductDetail() {
         <BreadcrumbLink breadcrumbItems={breadcrumbItems(id)} />
         <Form
           form={form}
-          onValuesChange={() => setUpdate(true)}
           disabled={updateLoading}
+          onValuesChange={() => setUpdate(true)}
           onFinish={updateProduct}
           layout="vertical"
           className="grid gap-3 grid-cols-1 md:grid-cols-2"
         >
-          <Card className="drop-shadow h-fit">
+          <Card loading={loading} className="drop-shadow h-fit">
             <Form.Item
               label="Tên sản phẩm"
               name="name"
@@ -243,25 +340,54 @@ export default function ProductDetail() {
                 options={productAttributes.materials}
               />
             </Form.Item>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Form.Item
+                label="Giá"
+                name="price"
+                rules={[{ required: true, message: 'Vui lòng nhập giá' }]}
+              >
+                <InputNumber
+                  min={0}
+                  size="large"
+                  className="w-full col-span-2"
+                  formatter={(value) => value.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                  parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
+                  placeholder="Price..."
+                />
+              </Form.Item>
+              <Form.Item label="Phần trăm giảm giá" name="discountPercent">
+                <InputNumber
+                  size="large"
+                  min={0}
+                  max={100}
+                  className="w-full"
+                  formatter={(value) => `${value}%`}
+                  parser={(value) => value?.replace('%', '')}
+                  placeholder="5, 10,..."
+                />
+              </Form.Item>
+            </div>
+
             <Form.Item label="Mô tả sản phẩm" name="description">
               <TextArea
                 id="description"
-                rows={6}
+                autoSize={{ minRows: 6 }}
                 count={{ show: true, max: 500 }}
                 placeholder="Áo đẹp..."
                 maxLength={500}
               />
             </Form.Item>
           </Card>
-          <Card className="drop-shadow h-fit">
+          <Card loading={loading} className="drop-shadow h-fit">
             <Form.Item
-              label="Hình ảnh"
+              label="Hình ảnh chung"
               name="imageUrls"
               rules={[{ required: true, message: 'Tối thiểu 1 ảnh' }]}
               getValueFromEvent={(e) => e.fileList}
             >
               <Upload
-                maxCount={9}
+                maxCount={4}
                 beforeUpload={() => false}
                 listType="picture-card"
                 fileList={fileList}
@@ -270,7 +396,7 @@ export default function ProductDetail() {
                 onPreview={handlePreview}
                 onChange={handleChangeFile}
               >
-                {fileList.length >= 9 ? null : (
+                {fileList.length >= 4 ? null : (
                   <button type="button">
                     <PlusOutlined />
                     <div>Tải lên</div>
@@ -292,34 +418,87 @@ export default function ProductDetail() {
               />
             )}
 
-            <div className="grid grid-cols-2 gap-2">
-              <Form.Item
-                label="Giá"
-                name="price"
-                rules={[{ required: true, message: 'Vui lòng nhập giá' }]}
-              >
-                <InputNumber
-                  size="large"
-                  className="w-full col-span-2"
-                  formatter={(value) => value.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={(value) => value?.replace(/\$\s?|(,*)/g, '')}
-                  placeholder="Price..."
-                />
-              </Form.Item>
-              <Form.Item label="Phần trăm giảm giá" name="discountPercent">
-                <InputNumber
-                  size="large"
-                  min={0}
-                  max={100}
-                  className="w-full"
-                  defaultValue={0}
-                  formatter={(value) => `${value}%`}
-                  parser={(value) => value?.replace('%', '')}
-                  placeholder="5, 10,..."
-                />
-              </Form.Item>
-            </div>
+            <Form.List
+              name="colors"
+              rules={[
+                {
+                  validator: async (_, colors) => {
+                    if (!colors || colors.length < 1) {
+                      return Promise.reject(new Error('Vui lòng thêm ít nhất 1 màu'))
+                    } else {
+                      const colorValues = colors
+                        .map((item) => item?.colorName?.toLowerCase())
+                        .filter((value) => value !== undefined)
 
+                      if (new Set(colorValues).size !== colorValues.length) {
+                        return Promise.reject(new Error('Các màu không được trùng nhau'))
+                      }
+                    }
+                  },
+                },
+              ]}
+            >
+              {(fields, { add, remove }, { errors }) => (
+                <>
+                  {fields.map(({ key, name, ...restField }, index) => {
+                    const file = colorImages[key] ? [colorImages[key]] : []
+                    return (
+                      <div key={key} className="grid grid-cols-2 gap-2">
+                        <Flex align="baseline" gap={10}>
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'colorName']}
+                            rules={[{ required: true, message: 'Vui lòng nhập màu' }]}
+                          >
+                            <Input
+                              className="w-full"
+                              onChange={(e) => onChangeColor(e.target.value, index)}
+                              size="large"
+                              placeholder="Đen, Trắng,..."
+                            />
+                          </Form.Item>
+                          <MinusCircleOutlined
+                            className="inline-flex"
+                            onClick={() => {
+                              remove(name)
+                              handleRemoveColor(index, key)
+                            }}
+                          />
+                        </Flex>
+                        <Form.Item
+                          name={[name, 'image']}
+                          rules={[{ required: true, message: 'Vui lòng chọn ảnh' }]}
+                          getValueFromEvent={(e) => e.fileList}
+                        >
+                          <Upload
+                            maxCount={1}
+                            beforeUpload={() => false}
+                            listType="text"
+                            fileList={file}
+                            accept="image/png, image/gif, image/jpeg, image/svg"
+                            onPreview={handlePreview}
+                            onChange={(e) => handleChangeColorFile(e, key)}
+                          >
+                            {colorImages[key] ? null : (
+                              <Button type="link">
+                                <PlusOutlined />
+                                <span>Tải ảnh lên</span>
+                              </Button>
+                            )}
+                          </Upload>
+                        </Form.Item>
+                      </div>
+                    )
+                  })}
+                  <Form.Item>
+                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                      Thêm màu
+                    </Button>
+                    <Form.ErrorList errors={errors} />
+                  </Form.Item>
+                </>
+              )}
+            </Form.List>
             <Form.Item
               label="Size"
               name="sizes"
@@ -332,30 +511,62 @@ export default function ProductDetail() {
                 optionFilterProp="label"
                 placeholder="Thêm size"
                 onChange={handleSelectSize}
-                options={sizes}
+                options={productAttributes.sizes}
                 autoClearSearchValue
                 mode="multiple"
+                disabled={
+                  colors.length <= 0 ||
+                  colors.some((color) => color === undefined || !color?.colorName)
+                }
               />
             </Form.Item>
-            <div className="pb-2 space-y-2">
-              {sizeList.map((item, i) => (
-                <div key={i} className="grid gap-2 grid-cols-3">
-                  <Button size="large">{item.sizeId}</Button>
-                  <InputNumber
-                    required
-                    size="large"
-                    className="w-full col-span-2"
-                    defaultValue={item.inStock}
-                    onChange={(value) =>
-                      handleSetSizeValue({ sizeId: item.sizeId, inStock: value })
+            {/* {console.log(sizeListValue)} */}
+            <div className="grid grid-cols-2 gap-2">
+              {sizeList.map((size, i) => (
+                <Form.Item label={size.label} key={i} className="mb-2">
+                  {colors.map((color, j) => {
+                    if (color && color.colorName !== '') {
+                      return (
+                        <Flex key={j} align="center" gap={8} className="mb-2">
+                          <div className="w-24 truncate border rounded-md px-2 py-1 text-center">
+                            {color?.colorName}
+                          </div>
+                          <InputNumber
+                            required
+                            min={0}
+                            className="w-full"
+                            value={
+                              sizeListValue
+                                .find((e) => e.colorName === color?.colorName)
+                                ?.sizeInStocks?.find((e) => e.sizeId === size.sizeId)?.inStock
+                            }
+                            onChange={(value) => {
+                              handleSetSizeValue(
+                                {
+                                  sizeId: size.sizeId,
+                                  colorName: color.colorName,
+                                  inStock: value,
+                                },
+                                j,
+                              )
+                              setUpdate(true)
+                            }}
+                            placeholder="Số lượng kho..."
+                          />
+                        </Flex>
+                      )
                     }
-                    type="number"
-                    placeholder="Số lượng kho..."
-                  />
-                </div>
+                    return null
+                  })}
+                </Form.Item>
               ))}
             </div>
-            <Form.Item label="Kích hoạt sản phẩm" name="enable" valuePropName="checked">
+            <Form.Item
+              label="Kích hoạt sản phẩm"
+              className="mt-2"
+              name="enable"
+              valuePropName="checked"
+            >
               <Switch
                 checkedChildren={<CheckOutlined />}
                 unCheckedChildren={<CloseOutlined />}

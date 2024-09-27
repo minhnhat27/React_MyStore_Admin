@@ -12,5 +12,7 @@ export const itemRender = (currentRoute, params, items, paths) => {
 }
 
 export default function BreadcrumbLink({ breadcrumbItems }) {
-  return <Breadcrumb className="py-2" items={breadcrumbItems} itemRender={itemRender} />
+  return (
+    <Breadcrumb className="py-2 dark:text-white" items={breadcrumbItems} itemRender={itemRender} />
+  )
 }

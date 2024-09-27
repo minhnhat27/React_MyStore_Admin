@@ -62,22 +62,6 @@ export default function AddProduct() {
   const [colorImages, setColorImages] = useState([])
   const colors = Form.useWatch('colors', form) || []
 
-  const handlePreview = async (file) => {
-    if (!file.url && !file.preview) {
-      file.preview = await getBase64(file.originFileObj)
-    }
-    setPreviewImage(file.url || file.preview)
-    setPreviewOpen(true)
-  }
-
-  const handleChangeFile = ({ fileList: newFileList }) => setFileList(newFileList)
-
-  const handleChangeColorFile = ({ fileList: newFileList }, key) => {
-    const colors = [...colorImages]
-    colors[key] = newFileList[0]
-    setColorImages(colors)
-  }
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -94,23 +78,52 @@ export default function AddProduct() {
     fetchData()
   }, [message])
 
+  const handlePreview = async (file) => {
+    if (!file.url && !file.preview) {
+      file.preview = await getBase64(file.originFileObj)
+    }
+    setPreviewImage(file.url || file.preview)
+    setPreviewOpen(true)
+  }
+
+  const handleChangeFile = ({ fileList: newFileList }) => setFileList(newFileList)
+
+  const handleChangeColorFile = ({ fileList: newFileList }, key) => {
+    const colors = [...colorImages]
+    colors[key] = newFileList[0]
+    setColorImages(colors)
+  }
+
   const handleSelectSize = (listSizeId, valueLabelObj) => {
     setSizeList(valueLabelObj.map((item) => ({ sizeId: item.value, label: item.label })))
 
     const newList = colors.map((color) => {
-      const exist = sizeListValue.find((e) => e.color === color?.color)
-      if (exist) {
-        const updatedSizeInStocks = [...exist.sizeInStocks]
-        listSizeId.forEach((sizeId) => {
-          const sizeExists = updatedSizeInStocks.some((stock) => stock.sizeId === sizeId)
-          if (!sizeExists) updatedSizeInStocks.push({ sizeId: sizeId })
-        })
-        return { ...exist, sizeInStocks: updatedSizeInStocks }
-      } else {
-        const sizeInStocks = listSizeId.map((sizeId) => ({ sizeId: sizeId }))
-        return { color: color.color, sizeInStocks: sizeInStocks }
-      }
+      const sizeInStocks = listSizeId.map((sizeId) => {
+        const exist = sizeListValue
+          ?.find((e) => e.colorName === color?.colorName)
+          ?.sizeInStocks?.find((e) => e.sizeId === sizeId)
+
+        if (exist) {
+          return { ...exist }
+        } else return { sizeId: sizeId }
+      })
+      return { colorName: color.colorName, sizeInStocks: sizeInStocks }
     })
+
+    // const newList = colors.map((color) => {
+    //   const exist = sizeListValue.find((e) => e.colorName === color?.colorName)
+    //   if (exist) {
+    //     const updatedSizeInStocks = [...exist.sizeInStocks]
+    //     listSizeId.forEach((sizeId) => {
+    //       const sizeExists = updatedSizeInStocks.some((stock) => stock.sizeId === sizeId)
+    //       if (!sizeExists) updatedSizeInStocks.push({ sizeId: sizeId })
+    //     })
+    //     return { ...exist, sizeInStocks: updatedSizeInStocks }
+    //   } else {
+    //     const sizeInStocks = listSizeId.map((sizeId) => ({ sizeId: sizeId }))
+    //     return { colorName: color.colorName, sizeInStocks: sizeInStocks }
+    //   }
+    // })
     setSizeListValue(newList)
   }
 
@@ -126,11 +139,18 @@ export default function AddProduct() {
   const onChangeColor = (value, index) => {
     if (sizeList.length > 0) {
       const newList = [...sizeListValue]
-      if (newList[index]?.color) {
-        newList[index].color = value
+      if (newList[index]?.colorName) {
+        newList[index].colorName = value
       } else {
         newList[index] = {}
-        newList[index].color = value
+        newList[index].colorName = value
+
+        sizeList.forEach((item) => {
+          if (!newList[index]?.sizeInStocks) newList[index].sizeInStocks = []
+          if (!newList[index]?.sizeInStocks?.some((e) => e.sizeId === item.sizeId)) {
+            newList[index].sizeInStocks.push({ sizeId: item.sizeId })
+          }
+        })
       }
       setSizeListValue(newList)
     }
@@ -178,7 +198,7 @@ export default function AddProduct() {
       delete data.materialIds
 
       sizeListValue.forEach((color, index) => {
-        formData.append(`colorSizes[${index}].color`, color.color)
+        formData.append(`colorSizes[${index}].colorName`, color.colorName)
         formData.append(`colorSizes[${index}].image`, colors[index]?.image[0]?.originFileObj)
 
         color.sizeInStocks.forEach((size, sizeIndex) => {
@@ -370,7 +390,7 @@ export default function AddProduct() {
                       return Promise.reject(new Error('Vui lòng thêm ít nhất 1 màu'))
                     } else {
                       const colorValues = colors
-                        .map((item) => item?.color?.toLowerCase())
+                        .map((item) => item?.colorName?.toLowerCase())
                         .filter((value) => value !== undefined)
 
                       if (new Set(colorValues).size !== colorValues.length) {
@@ -390,7 +410,7 @@ export default function AddProduct() {
                         <Flex align="baseline" gap={10}>
                           <Form.Item
                             {...restField}
-                            name={[name, 'color']}
+                            name={[name, 'colorName']}
                             rules={[{ required: true, message: 'Vui lòng nhập màu' }]}
                           >
                             <Input
@@ -458,7 +478,8 @@ export default function AddProduct() {
                 autoClearSearchValue
                 mode="multiple"
                 disabled={
-                  colors.length <= 0 || colors.some((color) => color === undefined || !color?.color)
+                  colors.length <= 0 ||
+                  colors.some((color) => color === undefined || !color?.colorName)
                 }
               />
             </Form.Item>
@@ -466,34 +487,31 @@ export default function AddProduct() {
               {sizeList.map((size, i) => (
                 <Form.Item label={size.label} key={i} className="mb-2">
                   {colors.map((color, j) => {
-                    if (color && color.color !== '') {
+                    if (color && color.colorName !== '') {
                       return (
                         <Flex key={j} align="center" gap={8} className="mb-2">
                           <div className="w-24 truncate border rounded-md px-2 py-1 text-center">
-                            {color?.color}
+                            {color?.colorName}
                           </div>
                           <InputNumber
                             required
                             min={0}
                             className="w-full"
                             value={
-                              sizeListValue.find(
-                                (e) =>
-                                  e.sizeId === size.sizeId &&
-                                  e.sizeInStocks[j].color === color.color,
-                              )?.sizeInStocks[j].inStock
+                              sizeListValue
+                                .find((e) => e.colorName === color?.colorName)
+                                ?.sizeInStocks?.find((e) => e.sizeId === size.sizeId)?.inStock
                             }
                             onChange={(value) =>
                               handleSetSizeValue(
                                 {
                                   sizeId: size.sizeId,
-                                  color: color.color,
+                                  colorName: color.colorName,
                                   inStock: value,
                                 },
                                 j,
                               )
                             }
-                            type="number"
                             placeholder="Số lượng kho..."
                           />
                         </Flex>

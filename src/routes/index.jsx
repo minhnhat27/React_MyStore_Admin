@@ -1,6 +1,16 @@
 import { Navigate, Route } from 'react-router-dom'
 import { Fragment } from 'react'
 
+import {
+  ContainerOutlined,
+  LoginOutlined,
+  PieChartOutlined,
+  UserOutlined,
+  ProductOutlined,
+  DeploymentUnitOutlined,
+  MessageFilled,
+} from '@ant-design/icons'
+
 import DefaultLayout from '../components/Layout/DefaultLayout'
 import NotFound from '../components/NotFound'
 import Home from '../pages/Home'
@@ -14,22 +24,22 @@ import Category from '../pages/ProductAttributes/Categories'
 import Materials from '../pages/ProductAttributes/Materials'
 import ProductDetail from '../pages/Products/ProductDetail'
 import Users from '../pages/Users'
-
-import {
-  ContainerOutlined,
-  LoginOutlined,
-  PieChartOutlined,
-  UserOutlined,
-  ProductOutlined,
-  DeploymentUnitOutlined,
-} from '@ant-design/icons'
+import Message from '../pages/Message'
 import Sizes from '../pages/ProductAttributes/Sizes'
+import Payments from '../pages/Payments'
 
 export const navigateItems = [
   { key: '/home', icon: <PieChartOutlined />, label: 'Trang chủ' },
   { key: '/orders-management', icon: <ContainerOutlined />, label: 'Đơn hàng' },
   { key: '/products-management', icon: <ProductOutlined />, label: 'Sản phẩm' },
+
+  {
+    key: '/message',
+    icon: <MessageFilled />,
+    label: 'Trò chuyện',
+  },
   { key: '/users-management', icon: <UserOutlined />, label: 'Người dùng' },
+  { key: '/payments-management', icon: <ContainerOutlined />, label: 'Thanh toán' },
   {
     key: 'sub1',
     label: 'Thuộc tính sản phẩm',
@@ -52,6 +62,8 @@ export const publicRoutes = [
 export const privateRoutes = [
   { path: '/home', component: Home },
 
+  { path: '/message', component: Message },
+
   { path: '/products-management', component: Products },
   { path: '/products-management/product-detail/:id', component: ProductDetail },
   { path: '/products-management/add-product', component: AddProduct },
@@ -60,6 +72,7 @@ export const privateRoutes = [
 
   { path: '/orders-management', component: Orders },
   { path: '/orders-management/order-detail/:id', component: OrderDetail },
+  { path: '/payments-management', component: Payments },
 
   { path: '/brands-management', component: Brand },
   { path: '/categories-management', component: Category },

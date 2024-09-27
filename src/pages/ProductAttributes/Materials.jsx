@@ -75,8 +75,9 @@ export default function Material() {
       materialService
         .update(materialId, form.getFieldsValue())
         .then((res) => {
-          const newMaterials = materials.filter((item) => item.id !== materialId)
-          setMaterials([...newMaterials, res.data])
+          const newMaterials = materials.map((item) => (item.id === materialId ? res.data : item))
+          setMaterials(newMaterials)
+
           form.resetFields()
           setIsUpdate(false)
           message.success('Thành công')

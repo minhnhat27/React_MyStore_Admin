@@ -15,7 +15,7 @@ const getAll = async (page, pageSize, keySearch) =>
       key: keySearch ?? '',
     },
   })
-const getProduct = async (id) => await axios.get(API_URL + `/getProduct/${id}`)
+const getProduct = async (id) => await axios.get(API_URL + `/${id}`)
 const create = async (data) =>
   await axios.post(API_URL + '/create', data, { headers: authMediaHeader() })
 const update = async (id, data) =>

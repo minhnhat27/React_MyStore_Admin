@@ -3,7 +3,7 @@ import { LoadingOutlined, SmileOutlined, SolutionOutlined, UserOutlined } from '
 
 export default function Home() {
   return (
-    <>
+    <div className="h-[300vh]">
       <Steps
         items={[
           {
@@ -28,6 +28,6 @@ export default function Home() {
           },
         ]}
       />
-    </>
+    </div>
   )
 }

@@ -4,14 +4,14 @@ import authActions from '../../../services/authAction'
 
 import logo from '../../../logo.png'
 import authService from '../../../services/authService'
-import { Avatar, Badge, Button, Dropdown, Modal } from 'antd'
+import { Avatar, Badge, Dropdown, Modal } from 'antd'
 import {
   UserOutlined,
-  MessageTwoTone,
   MoonFilled,
   SunFilled,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  MessageTwoTone,
 } from '@ant-design/icons'
 import { useEffect, useState } from 'react'
 
@@ -65,10 +65,6 @@ export default function Header({ collapsed, toggleCollapsed }) {
 
   const items = [
     {
-      label: <Link to="/profile">Profile</Link>,
-      key: '0',
-    },
-    {
       label: <Link to="/settings">Settings</Link>,
       key: '1',
     },
@@ -76,7 +72,7 @@ export default function Header({ collapsed, toggleCollapsed }) {
       type: 'divider',
     },
     {
-      label: 'Log out',
+      label: 'Đăng xuất',
       key: '3',
       onClick: showModal,
     },
@@ -87,11 +83,10 @@ export default function Header({ collapsed, toggleCollapsed }) {
       <Modal title="Log Out" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
         <p>Are you sure you want to log out?</p>
       </Modal>
-      <nav className="bg-white sticky top-0 z-20 border-b border-gray-200 dark:bg-gray-900">
-        <div className="max-w-screen-xl px-2 space-x-2 h-20 flex flex-nowrap items-center">
-          <Button
-            type="text"
-            className="flex items-center justify-center text-lg"
+      <nav className="bg-white sticky top-0 z-20 border-b border-gray-200 dark:border-black dark:bg-black">
+        <div className="px-2 h-20 flex flex-nowrap items-center">
+          <div
+            className="border py-1 px-3 rounded-md text-base cursor-pointer dark:text-slate-300"
             onClick={toggleCollapsed}
           >
             {sessionStorage.getItem('collapsed') === 'true' || collapsed ? (
@@ -99,17 +94,19 @@ export default function Header({ collapsed, toggleCollapsed }) {
             ) : (
               <MenuFoldOutlined />
             )}
-          </Button>
+          </div>
 
-          <div className="flex flex-1 justify-end items-center shrink-0 md:order-2 space-x-2 md:space-x-4 rtl:space-x-reverse">
-            <Badge count={10} className="select-none border rounded-lg">
-              <Avatar
-                className="bg-white hover:bg-gray-200 cursor-pointer"
-                icon={<MessageTwoTone />}
-                shape="square"
-                size="large"
-              />
-            </Badge>
+          <div className="flex flex-1 justify-end items-center shrink-0 md:order-2 space-x-4 rtl:space-x-reverse">
+            <Link to="/message">
+              <Badge count={10} className="select-none border rounded-lg">
+                <Avatar
+                  className="bg-white hover:bg-gray-200 cursor-pointer"
+                  icon={<MessageTwoTone />}
+                  shape="square"
+                  size="large"
+                />
+              </Badge>
+            </Link>
             <div onClick={toggleDarkMode} className="select-none border rounded-lg">
               <Avatar
                 className="bg-white text-gray-700 hover:bg-gray-200 cursor-pointer"

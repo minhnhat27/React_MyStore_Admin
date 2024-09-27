@@ -76,8 +76,9 @@ export default function Category() {
       categoryService
         .update(categoryId, form.getFieldsValue())
         .then((res) => {
-          const newCategories = categories.filter((item) => item.id !== categoryId)
-          setCategories([...newCategories, res.data])
+          const newCategories = categories.map((item) => (item.id === categoryId ? res.data : item))
+          setCategories(newCategories)
+
           form.resetFields()
           setIsUpdate(false)
           message.success('Thành công')

@@ -1,7 +1,20 @@
-import { Breadcrumb, Button, Card, Form, Input, Popconfirm, Spin, Table, Tooltip, App } from 'antd'
+import {
+  Breadcrumb,
+  Button,
+  Card,
+  Form,
+  Input,
+  Popconfirm,
+  Spin,
+  Table,
+  Tooltip,
+  App,
+  Switch,
+  Tag,
+} from 'antd'
 import { useState } from 'react'
 import { DeleteOutlined, EditTwoTone, HomeFilled } from '@ant-design/icons'
-import sizeService from '../../services/products/sizeService'
+import paymentService from '../../services/payments/paymentService'
 import { useEffect } from 'react'
 import { showError } from '../../services/commonService'
 
@@ -14,7 +27,7 @@ const breadcrumbItems = [
     title: 'Thuộc tính sản phẩm',
   },
   {
-    title: 'Kích cỡ',
+    title: 'Danh mục',
   },
 ]
 
@@ -25,7 +38,14 @@ const columns = (handleDelete, onEdit) => [
     align: 'center',
   },
   {
-    title: 'Action',
+    title: 'Kích hoạt',
+    dataIndex: 'isActive',
+    align: 'center',
+    render: (value) =>
+      value ? <Tag color="#87d068">Kích hoạt</Tag> : <Tag color="#FF4D4F">Vô hiệu</Tag>,
+  },
+  {
+    title: 'Hành động',
     align: 'center',
     render: (_, record) => (
       <div className="cursor-pointer select-none text-lg inline-flex space-x-2">
@@ -44,7 +64,7 @@ const columns = (handleDelete, onEdit) => [
   },
 ]
 
-export default function Sizes() {
+export default function Payments() {
   const { message } = App.useApp()
   const [loading, setLoading] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
@@ -52,15 +72,15 @@ export default function Sizes() {
   const [form] = Form.useForm()
   const [isUpdate, setIsUpdate] = useState(false)
 
-  const [sizes, setSizes] = useState([])
-  const [sizeId, setSizeId] = useState('')
+  const [payments, setPayments] = useState([])
+  const [paymentId, setpaymentId] = useState('')
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const res = await sizeService.getAll()
-        setSizes(res.data)
+        const res = await paymentService.getAll()
+        setPayments(res.data)
       } catch (error) {
         message.error(showError(error))
       } finally {
@@ -73,11 +93,11 @@ export default function Sizes() {
   const handleSave = () => {
     setSaveLoading(true)
     if (isUpdate) {
-      sizeService
-        .update(sizeId, form.getFieldsValue())
+      paymentService
+        .update(paymentId, form.getFieldsValue())
         .then((res) => {
-          const newsizes = sizes.map((item) => (item.id === sizeId ? res.data : item))
-          setSizes(newsizes)
+          const newPayments = payments.map((item) => (item.id === paymentId ? res.data : item))
+          setPayments(newPayments)
 
           form.resetFields()
           setIsUpdate(false)
@@ -86,10 +106,10 @@ export default function Sizes() {
         .catch((err) => message.error(showError(err)))
         .finally(() => setSaveLoading(false))
     } else {
-      sizeService
+      paymentService
         .create(form.getFieldsValue())
         .then((res) => {
-          setSizes([...sizes, res.data])
+          setPayments([...payments, res.data])
           form.resetFields()
           message.success('Thành công')
         })
@@ -99,10 +119,10 @@ export default function Sizes() {
   }
 
   const handleDelete = async (id) => {
-    await sizeService
+    await paymentService
       .remove(id)
       .then(() => {
-        setSizes(sizes.filter((item) => item.id !== id))
+        setPayments(payments.filter((item) => item.id !== id))
         message.success('Thành công')
       })
       .catch((err) => message.error(showError(err)))
@@ -111,12 +131,12 @@ export default function Sizes() {
   const onEdit = (record) => {
     form.setFieldsValue(record)
     setIsUpdate(true)
-    setSizeId(record.id)
+    setpaymentId(record.id)
   }
   const handleClear = () => {
     form.resetFields()
     setIsUpdate(false)
-    setSizeId('')
+    setpaymentId('')
   }
   return (
     <>
@@ -126,7 +146,7 @@ export default function Sizes() {
           <Card className="md:col-span-2 drop-shadow">
             <Table
               columns={columns(handleDelete, onEdit)}
-              dataSource={sizes}
+              dataSource={payments}
               rowKey={(record) => record.id}
               className="overflow-x-auto"
               rowHoverable
@@ -134,12 +154,12 @@ export default function Sizes() {
               loading={loading}
             />
           </Card>
-          <Card title="Size" className="h-fit bg-white drop-shadow">
+          <Card title="Phương thức" className="h-fit bg-white drop-shadow">
             <Form layout="vertical" form={form} disabled={saveLoading} onFinish={handleSave}>
               <Form.Item
-                label="Tên size"
+                label="Tên phương thức"
                 name="name"
-                rules={[{ required: true, message: 'Vui lòng nhập tên size' }]}
+                rules={[{ required: true, message: 'Vui lòng nhập tên' }]}
               >
                 <Input
                   count={{
@@ -148,9 +168,13 @@ export default function Sizes() {
                   }}
                   maxLength={25}
                   size="large"
-                  placeholder="S, M, 24, 25..."
+                  placeholder="VNPay, MoMo,..."
                   allowClear
                 />
+              </Form.Item>
+
+              <Form.Item label="Kích hoạt" name="isActive">
+                <Switch defaultChecked={false} />
               </Form.Item>
 
               <div className="grid grid-cols-2 gap-2">
@@ -163,7 +187,7 @@ export default function Sizes() {
                   className="w-full"
                   size="large"
                 >
-                  Làm mới
+                  Clear
                 </Button>
               </div>
             </Form>

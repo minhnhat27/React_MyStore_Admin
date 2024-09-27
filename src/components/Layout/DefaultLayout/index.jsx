@@ -1,6 +1,6 @@
 import Header from '../Header'
 import { useEffect, useLayoutEffect, useState } from 'react'
-import { App, ConfigProvider, Layout, Menu } from 'antd'
+import { App, ConfigProvider, FloatButton, Layout, Menu } from 'antd'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { navigateItems } from '../../../routes'
 import { useAuth } from '../../../App'
@@ -48,7 +48,7 @@ export default function DefaultLayout({ children }) {
             breakpoint="md"
             onBreakpoint={(broken) => setCollapsed(broken)}
             style={{ position: 'sticky' }}
-            className="no-scrollbar overflow-auto h-screen left-0 top-0 bottom-0"
+            className="no-scrollbar overflow-auto h-screen left-0 top-0 bottom-0 bg-black"
           >
             <Menu
               defaultSelectedKeys={[navSelected]}
@@ -62,7 +62,10 @@ export default function DefaultLayout({ children }) {
           </Sider>
           <Layout>
             <Header collapsed={collapsed} toggleCollapsed={toggleCollapsed} />
-            <Content className="px-4">{children}</Content>
+            <Content className="px-4 dark:bg-gradient-to-tl from-slate-700 via-black to-slate-900">
+              {children}
+            </Content>
+            <FloatButton.BackTop />
           </Layout>
         </Layout>
       </App>

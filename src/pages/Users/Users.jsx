@@ -73,7 +73,7 @@ const columns = (onLockOut, handleUnlock) => [
     sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
   },
   {
-    title: 'Cập nhật gần nhất',
+    title: 'Cập nhật lần cuối',
     dataIndex: 'updatedAt',
     render: (value) => value !== null && formatDate(value),
     sorter: (a, b) => new Date(a.updatedAt) - new Date(b.updatedAt),

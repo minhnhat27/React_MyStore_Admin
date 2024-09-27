@@ -126,8 +126,9 @@ export default function Brand() {
       brandService
         .update(brandId, formData)
         .then((res) => {
-          const newBrands = brands.filter((item) => item.id !== brandId)
-          setBrands([...newBrands, res.data])
+          const newBrands = brands.map((item) => (item.id === brandId ? res.data : item))
+          setBrands(newBrands)
+
           setIsUpdate(false)
           form.resetFields()
           setFileList([])
