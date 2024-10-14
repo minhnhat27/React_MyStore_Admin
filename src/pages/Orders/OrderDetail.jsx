@@ -1,9 +1,9 @@
-import { Button, Card, Descriptions, Table } from 'antd'
-import { showError } from '../../services/commonService'
+import { App, Button, Card, Descriptions, Table } from 'antd'
+import { formatVND, showError } from '../../services/commonService'
 import { useEffect, useState } from 'react'
 import orderService from '../../services/orders/orderService'
 import { useParams } from 'react-router-dom'
-import { useAntdMessage, useLoading } from '../../App'
+import { useLoading } from '../../App'
 import BreadcrumbLink from '../../components/BreadcrumbLink'
 import { HomeFilled } from '@ant-design/icons'
 
@@ -23,20 +23,25 @@ const breadcrumbItems = [
 
 const columnProducts = () => [
   {
-    title: 'Product name',
+    title: 'Tên sản phẩm',
     dataIndex: 'productName',
   },
   {
-    title: 'Size',
-    dataIndex: 'size',
+    title: 'Màu sắc',
+    dataIndex: 'colorName',
   },
   {
-    title: 'Quantity',
+    title: 'Kích cỡ',
+    dataIndex: 'sizeName',
+  },
+  {
+    title: 'Số lượng',
     dataIndex: 'quantity',
   },
   {
-    title: 'Price',
+    title: 'Giá',
     dataIndex: 'price',
+    render: (value) => formatVND.format(value),
   },
 ]
 
@@ -97,7 +102,7 @@ const cartTotal = (subtotal, shippingCost, total) => [
 export default function OrderDetail() {
   const { id } = useParams()
   const { setIsLoading } = useLoading()
-  const { showMessage } = useAntdMessage()
+  const { message } = App.useApp()
   // const [loading, setLoading] = useState(false)
   const [orderDetail, setOrderDetail] = useState([])
 
@@ -105,15 +110,15 @@ export default function OrderDetail() {
     setIsLoading(true)
     const fetchData = async () => {
       try {
-        const data = await orderService.getOrderDetail(id)
-        setOrderDetail(data)
+        const res = await orderService.getOrderDetail(id)
+        setOrderDetail(res.data.productOrderDetails)
       } catch (error) {
-        showMessage.error(showError(error))
+        message.error(showError(error))
       }
       setIsLoading(false)
     }
     fetchData()
-  }, [id, setIsLoading, showMessage])
+  }, [id, setIsLoading, message])
 
   return (
     <>
@@ -125,19 +130,19 @@ export default function OrderDetail() {
               <Table
                 columns={columnProducts()}
                 dataSource={orderDetail}
-                rowKey={(record) => record.id}
+                rowKey={(record) => record.productId}
                 className="overflow-x-auto"
                 rowHoverable
                 pagination={false}
               />
             </Card>
             <Card className="drop-shadow h-fit" size="small">
-              <Descriptions title="Cart Items" column={2} items={cartTotal()} />
+              <Descriptions title="Cart Items" column={2} items={cartTotal(0, 1, 2)} />
             </Card>
           </div>
           <div className="grid gap-4 grid-cols-1 h-fit">
             <Card className="drop-shadow" size="small">
-              <Descriptions title="Sumary" column={2} items={sumary(id)} />
+              <Descriptions title="Sumary" column={2} items={sumary(id, 2, 3)} />
             </Card>
             <Card className="drop-shadow" size="small">
               <Descriptions

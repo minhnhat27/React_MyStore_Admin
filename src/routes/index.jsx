@@ -24,7 +24,7 @@ import Category from '../pages/ProductAttributes/Categories'
 import Materials from '../pages/ProductAttributes/Materials'
 import ProductDetail from '../pages/Products/ProductDetail'
 import Users from '../pages/Users'
-import Message from '../pages/Message'
+import Message from '../pages/Chat'
 import Sizes from '../pages/ProductAttributes/Sizes'
 import Payments from '../pages/Payments'
 

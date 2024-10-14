@@ -1,10 +1,9 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../../App'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth, useChat } from '../../../App'
 import authActions from '../../../services/authAction'
 
-import logo from '../../../logo.png'
 import authService from '../../../services/authService'
-import { Avatar, Badge, Dropdown, Modal } from 'antd'
+import { App, Avatar, Badge, Button, Popconfirm } from 'antd'
 import {
   UserOutlined,
   MoonFilled,
@@ -13,26 +12,33 @@ import {
   MenuUnfoldOutlined,
   MessageTwoTone,
 } from '@ant-design/icons'
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
+import { HubConnectionState } from '@microsoft/signalr'
+
+let hasAdminEventRegistered = false
 
 export default function Header({ collapsed, toggleCollapsed }) {
   const { state, dispatch } = useAuth()
+  const { chatConnection } = useChat()
+  const { notification } = App.useApp()
   const navigate = useNavigate()
-  const [user, setUser] = useState({})
+  const location = useLocation()
+
+  const [pathname, setPathname] = useState(location.pathname)
 
   const [darkMode, setDarkMode] = useState(false)
 
-  const [isModalOpen, setIsModalOpen] = useState(false)
-
-  const showModal = () => setIsModalOpen(true)
+  const [count, setCount] = useState(0)
 
   const handleOk = () => {
-    setIsModalOpen(false)
     authService.logout()
     dispatch(authActions.LOGOUT)
     navigate('/')
   }
-  const handleCancel = () => setIsModalOpen(false)
+
+  useLayoutEffect(() => {
+    setPathname(location.pathname)
+  }, [location.pathname])
 
   useEffect(() => {
     const savedDarkMode = localStorage.getItem('isDarkMode')
@@ -44,6 +50,48 @@ export default function Header({ collapsed, toggleCollapsed }) {
   }, [])
 
   useEffect(() => {
+    if (
+      chatConnection &&
+      chatConnection.state === HubConnectionState.Connected &&
+      !hasAdminEventRegistered
+    ) {
+      try {
+        chatConnection.on('onAdmin', (connectionId, message) => {
+          setPathname((pre) => {
+            if (pre !== '/message') {
+              const key = `open${Date.now()}`
+              notification.info({
+                message: (
+                  <>
+                    <span className="font-semibold">Message: </span>
+                    {message}
+                  </>
+                ),
+                btn: (
+                  <Link
+                    onClick={() => notification.destroy(key)}
+                    to={`/message?connectionId=${connectionId}`}
+                  >
+                    <Button size="small" type="link">
+                      Xem ngay
+                    </Button>
+                  </Link>
+                ),
+                key,
+              })
+              setCount((pre) => pre + 1)
+            }
+            return pre
+          })
+        })
+        hasAdminEventRegistered = true
+      } catch (err) {
+        console.error(err.toString())
+      }
+    }
+  }, [chatConnection, notification, pathname])
+
+  useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.remove('light')
       document.documentElement.classList.add('dark')
@@ -53,36 +101,13 @@ export default function Header({ collapsed, toggleCollapsed }) {
     }
   }, [darkMode])
 
-  useEffect(() => {
-    const user = authService.getCurrentUser()
-    user ? setUser({ fullName: user.fullName, email: user.email }) : setUser({})
-  }, [state.isAuthenticated])
-
   const toggleDarkMode = () => {
     setDarkMode(!darkMode)
     localStorage.setItem('isDarkMode', !darkMode)
   }
 
-  const items = [
-    {
-      label: <Link to="/settings">Settings</Link>,
-      key: '1',
-    },
-    {
-      type: 'divider',
-    },
-    {
-      label: 'Đăng xuất',
-      key: '3',
-      onClick: showModal,
-    },
-  ]
-
   return (
     <>
-      <Modal title="Log Out" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
-        <p>Are you sure you want to log out?</p>
-      </Modal>
       <nav className="bg-white sticky top-0 z-20 border-b border-gray-200 dark:border-black dark:bg-black">
         <div className="px-2 h-20 flex flex-nowrap items-center">
           <div
@@ -98,7 +123,7 @@ export default function Header({ collapsed, toggleCollapsed }) {
 
           <div className="flex flex-1 justify-end items-center shrink-0 md:order-2 space-x-4 rtl:space-x-reverse">
             <Link to="/message">
-              <Badge count={10} className="select-none border rounded-lg">
+              <Badge count={count} className="select-none border rounded-lg">
                 <Avatar
                   className="bg-white hover:bg-gray-200 cursor-pointer"
                   icon={<MessageTwoTone />}
@@ -116,8 +141,8 @@ export default function Header({ collapsed, toggleCollapsed }) {
               />
             </div>
             {state.isAuthenticated ? (
-              <Dropdown menu={{ items }} trigger={['click']}>
-                <div className="flex items-center cursor-pointer space-x-2">
+              <Popconfirm title="Xác nhận đăng xuất?" onConfirm={handleOk}>
+                {/* <div className="flex items-center cursor-pointer space-x-2">
                   <img className="w-8 h-8 rounded-full ring-1" src={logo} alt="user" />
                   <div className="w-16 sm:w-full">
                     <span className="block text-sm text-gray-900 truncate dark:text-white">
@@ -127,8 +152,11 @@ export default function Header({ collapsed, toggleCollapsed }) {
                       {user.email}
                     </span>
                   </div>
-                </div>
-              </Dropdown>
+                </div> */}
+                <Button type="primary" size="large" danger>
+                  Đăng xuất
+                </Button>
+              </Popconfirm>
             ) : (
               <Avatar icon={<UserOutlined />} />
             )}

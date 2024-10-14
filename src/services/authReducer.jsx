@@ -5,6 +5,7 @@ const user = authService.getCurrentUser()
 export const initialState = {
   isAuthenticated: user !== undefined,
 }
+
 export const reducer = (state, action) => {
   switch (action.type) {
     case 'LOGIN':

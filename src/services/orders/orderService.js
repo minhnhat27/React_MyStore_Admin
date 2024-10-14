@@ -13,8 +13,7 @@ const getAll = async (page, pageSize, keySearch) =>
     },
   })
 
-const getOrderDetail = async (id) =>
-  await axios.get(API_URL + `/order-detail/${id}`, { headers: authHeader() })
+const getOrderDetail = async (id) => await axios.get(API_URL + `/${id}`, { headers: authHeader() })
 
 const orderService = {
   getAll,
