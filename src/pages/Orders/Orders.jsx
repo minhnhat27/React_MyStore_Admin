@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import orderService from '../../services/orders/orderService'
-import { formatDate, formatUSD, showError } from '../../services/commonService'
+import { formatDate, formatVND, showError } from '../../services/commonService'
 import { Breadcrumb, Button, Input, Pagination, Table, Tag, message } from 'antd'
 import { HomeFilled } from '@ant-design/icons'
+import httpService from '../../services/http-service'
+import { ORDER_API } from '../../services/api-urls'
+import { OrderStatus } from '../../services/const'
 
 const breadcrumbItems = [
   {
@@ -23,8 +25,8 @@ export default function Orders() {
   const [searchKey, setSearchKey] = useState('')
 
   const [totalItems, setTotalItems] = useState(0)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [currentPageSize, setCurrentPageSize] = useState(10)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const [paymentMethods, setPaymentMethods] = useState([])
   const [orderStatus, setOrderStatus] = useState([])
@@ -39,23 +41,24 @@ export default function Orders() {
     {
       title: 'Tổng',
       dataIndex: 'total',
-      render: (value) => formatUSD.format(value),
+      render: (value) => formatVND.format(value),
       sorter: (a, b) => a.total - b.total,
     },
     {
       title: 'Thanh toán',
-      dataIndex: 'paid',
+      dataIndex: 'total',
       align: 'center',
-      render: (value) => (
-        <Tag color={value ? 'green' : 'red'} key={value}>
-          {value ? 'Đã thanh toán' : 'Chưa thanh toán'}
+      render: (value, record) => (
+        <Tag color={record.amountPaid >= value ? 'green' : 'red'}>
+          {record.amountPaid >= value ? 'Đã thanh toán' : 'Chưa thanh toán'}
         </Tag>
       ),
       filters: [
         { value: true, text: 'Đã thanh toán' },
         { value: false, text: 'Chưa thanh toán' },
       ],
-      onFilter: (value, record) => record.paid === value,
+      onFilter: (value, record) =>
+        value ? record.amountPaid >= record.total : record.amountPaid < record.total,
     },
     {
       title: 'Phương thức',
@@ -74,21 +77,21 @@ export default function Orders() {
     {
       title: 'Trạng thái',
       dataIndex: 'orderStatus',
-      align: 'center',
+      render: (value) => OrderStatus[value],
       filters: orderStatus,
-      onFilter: (value, record) => record.orderStatus.indexOf(value) === 0,
+      onFilter: (value, record) => record.orderStatus === value,
     },
-    {
-      title: 'UserId',
-      dataIndex: 'userId',
-      render: (value) => <div className="w-16 md:w-24 lg:w-36 2xl:w-full truncate">{value}</div>,
-    },
+    // {
+    //   title: 'UserId',
+    //   dataIndex: 'userId',
+    //   render: (value) => <div className="w-16 md:w-24 lg:w-36 2xl:w-full truncate">{value}</div>,
+    // },
     {
       title: 'Hành động',
       align: 'center',
       render: (_, record) => (
         <Link to={`order-detail/${record.id}`}>
-          <Button>Detail</Button>
+          <Button>Chi tiết</Button>
         </Link>
       ),
     },
@@ -98,18 +101,10 @@ export default function Orders() {
     const fetchData = async () => {
       try {
         searchKey ? setSearchLoading(true) : setLoading(true)
-        const res = await orderService.getAll(currentPage, currentPageSize, searchKey)
+        const params = { page, pageSize, key: searchKey }
+        const data = await httpService.getWithParams(ORDER_API + '/all', params)
 
-        var newPaymentMethod = [
-          ...new Set(res.data?.items?.map((order) => order.paymentMethod)),
-        ].map((value) => {
-          return {
-            value: value,
-            text: value,
-          }
-        })
-
-        var newOrderStatus = [...new Set(res.data?.items?.map((order) => order.orderStatus))].map(
+        var newPaymentMethod = [...new Set(data?.items?.map((order) => order.paymentMethod))].map(
           (value) => {
             return {
               value: value,
@@ -118,11 +113,20 @@ export default function Orders() {
           },
         )
 
+        var newOrderStatus = [...new Set(data?.items?.map((order) => order.orderStatus))].map(
+          (value) => {
+            return {
+              value: value,
+              text: OrderStatus[value],
+            }
+          },
+        )
+
         setPaymentMethods(newPaymentMethod)
         setOrderStatus(newOrderStatus)
 
-        setOrders(res.data?.items)
-        setTotalItems(res.data?.totalItems)
+        setOrders(data?.items)
+        setTotalItems(data?.totalItems)
       } catch (error) {
         message.error(showError(error))
         setSearchKey('')
@@ -132,7 +136,7 @@ export default function Orders() {
       }
     }
     fetchData()
-  }, [currentPage, currentPageSize, searchKey])
+  }, [page, pageSize, searchKey])
 
   const handleSearch = (key) => key && key !== searchKey && setSearchKey(key)
 
@@ -164,19 +168,18 @@ export default function Orders() {
             pagination={false}
             loading={loading}
           />
-
           <Pagination
             hideOnSinglePage
             className="py-4"
             align="center"
             total={totalItems}
             showTotal={(total, range) => `${range[0]}-${range[1]} của ${total} đơn hàng`}
-            defaultPageSize={currentPageSize}
-            defaultCurrent={currentPage}
-            showSizeChanger={true}
+            defaultPageSize={pageSize}
+            defaultCurrent={page}
+            showSizeChanger
             onChange={(newPage, newPageSize) => {
-              setCurrentPage(newPage)
-              setCurrentPageSize(newPageSize)
+              setPage(newPage)
+              setPageSize(newPageSize)
             }}
           />
         </div>

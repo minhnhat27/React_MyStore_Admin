@@ -1,11 +1,12 @@
 import { App, Button, Card, Descriptions, Table } from 'antd'
 import { formatVND, showError } from '../../services/commonService'
 import { useEffect, useState } from 'react'
-import orderService from '../../services/orders/orderService'
 import { useParams } from 'react-router-dom'
 import { useLoading } from '../../App'
 import BreadcrumbLink from '../../components/BreadcrumbLink'
 import { HomeFilled } from '@ant-design/icons'
+import httpService from '../../services/http-service'
+import { ORDER_API } from '../../services/api-urls'
 
 const breadcrumbItems = [
   {
@@ -110,8 +111,8 @@ export default function OrderDetail() {
     setIsLoading(true)
     const fetchData = async () => {
       try {
-        const res = await orderService.getOrderDetail(id)
-        setOrderDetail(res.data.productOrderDetails)
+        const data = await httpService.get(ORDER_API + `/${id}`)
+        setOrderDetail(data.productOrderDetails)
       } catch (error) {
         message.error(showError(error))
       }

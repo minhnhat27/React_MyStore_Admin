@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
+  App,
   Button,
   DatePicker,
   Form,
@@ -12,9 +13,8 @@ import {
   Table,
   Tag,
   Tooltip,
-  message,
 } from 'antd'
-import userService from '../../services/users/userService'
+
 import { formatDate, showError } from '../../services/commonService'
 import { HomeFilled, LockOutlined, UnlockOutlined } from '@ant-design/icons'
 import { Link } from 'react-router-dom'
@@ -22,6 +22,8 @@ import { Link } from 'react-router-dom'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 import BreadcrumbLink from '../../components/BreadcrumbLink'
+import httpService from '../../services/http-service'
+import { ACCOUNT_API } from '../../services/api-urls'
 dayjs.extend(customParseFormat)
 const dateFormat = 'YYYY-MM-DD'
 
@@ -48,20 +50,20 @@ const columns = (onLockOut, handleUnlock) => [
     render: (value) => <div className="w-24 md:w-32 2xl:w-full truncate">{value}</div>,
     width: 100,
   },
-  {
-    title: 'Xác nhận Email',
-    dataIndex: 'emailConfirmed',
-    render: (value) => (
-      <Tag color={value ? 'green' : 'red'} key={value}>
-        {value ? 'Đã xác nhận' : 'Chưa xác nhận'}
-      </Tag>
-    ),
-    filters: [
-      { value: true, text: 'Đã xác nhận' },
-      { value: false, text: 'Chưa xác nhận' },
-    ],
-    onFilter: (value, record) => record.emailConfirmed === value,
-  },
+  // {
+  //   title: 'Xác nhận Email',
+  //   dataIndex: 'emailConfirmed',
+  //   render: (value) => (
+  //     <Tag color={value ? 'green' : 'red'} key={value}>
+  //       {value ? 'Đã xác nhận' : 'Chưa xác nhận'}
+  //     </Tag>
+  //   ),
+  //   filters: [
+  //     { value: true, text: 'Đã xác nhận' },
+  //     { value: false, text: 'Chưa xác nhận' },
+  //   ],
+  //   onFilter: (value, record) => record.emailConfirmed === value,
+  // },
   {
     title: 'Số điện thoại',
     dataIndex: 'phoneNumber',
@@ -91,7 +93,7 @@ const columns = (onLockOut, handleUnlock) => [
         const date = new Date(value)
         return (
           <span className="font-semibold text-red-600">
-            {date.getFullYear() >= 3000 ? 'Forever' : formatDate(value)}
+            {date.getFullYear() >= 3000 ? 'Vĩnh viễn' : formatDate(value)}
           </span>
         )
       } else
@@ -139,11 +141,12 @@ export default function Users() {
   const [loading, setLoading] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchKey, setSearchKey] = useState('')
+  const { notification } = App.useApp()
 
   //paginate
   const [totalItems, setTotalItems] = useState(0)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [currentPageSize, setCurrentPageSize] = useState(10)
+  const [page, setpage] = useState(1)
+  const [pageSize, setpageSize] = useState(10)
 
   const [userId, setUserId] = useState('')
   const [valueLockout, setValueLockout] = useState(1)
@@ -165,34 +168,49 @@ export default function Users() {
       valueLockout === 2 && (await form.validateFields())
       const endDate =
         valueLockout === 2 ? form.getFieldValue('endDate').format(dateFormat) : '3000-01-01'
-      const data = { userId: userId, endDate: endDate }
+      const data = { endDate: endDate }
 
-      setIsLockOutLoading(true)
-      userService
-        .lockOut(data)
-        .then(() => {
-          setIsLockoutModel(false)
-          resetModel()
-          setIsUpdate(!isUpdate)
-          message.success('Success')
+      try {
+        setIsLockOutLoading(true)
+        await httpService.put(ACCOUNT_API + `/lock-out/${userId}`, data)
+        setIsUpdate(!isUpdate)
+        setIsLockoutModel(false)
+        resetModel()
+        notification.success({
+          message: 'Thành công',
+          description: 'Đã khóa tài khoản',
         })
-        .catch((err) => message.error(showError(err)))
-        .finally(() => setIsLockOutLoading(false))
-    } catch (error) {}
+      } catch (error) {
+        notification.error({
+          message: 'Thất bại',
+          description: showError(error),
+        })
+      } finally {
+        setIsLockOutLoading(false)
+      }
+    } catch {}
   }
 
   const handleUnlock = async (id) => {
-    const data = { userId: id }
-    setIsLockOutLoading(true)
-    await userService
-      .lockOut(data)
-      .then(() => {
-        setIsUpdate(!isUpdate)
-        message.success('Success')
+    try {
+      setIsLockOutLoading(true)
+      const data = { endDate: null }
+      await httpService.put(ACCOUNT_API + `/lock-out/${id}`, data)
+      setIsUpdate(!isUpdate)
+      notification.success({
+        message: 'Thành công',
+        description: 'Đã mở tài khoản',
       })
-      .catch((err) => message.error(err.response?.data || err.message))
-      .finally(() => setIsLockOutLoading(false))
+    } catch (error) {
+      notification.error({
+        message: 'Thất bại',
+        description: showError(error),
+      })
+    } finally {
+      setIsLockOutLoading(false)
+    }
   }
+
   const handleCancel = () => {
     setIsLockoutModel(false)
     resetModel()
@@ -200,21 +218,27 @@ export default function Users() {
 
   useEffect(() => {
     searchKey ? setSearchLoading(true) : setLoading(true)
-    userService
-      .getAll(currentPage, currentPageSize, searchKey)
-      .then((res) => {
-        setUsers(res.data?.items)
-        setTotalItems(res.data?.totalItems)
-      })
-      .catch((err) => {
-        message.error(showError(err))
+
+    const fetchData = async () => {
+      try {
+        const params = { page, pageSize, key: searchKey }
+        const data = await httpService.getWithParams(ACCOUNT_API, params)
+
+        setUsers(data?.items)
+        setTotalItems(data?.totalItems)
+      } catch (error) {
+        notification.error({
+          message: 'Thất bại',
+          description: showError(error),
+        })
         setSearchKey('')
-      })
-      .finally(() => {
+      } finally {
         setLoading(false)
         setSearchLoading(false)
-      })
-  }, [currentPage, currentPageSize, searchKey, isUpdate])
+      }
+    }
+    fetchData()
+  }, [page, pageSize, searchKey, isUpdate, notification])
 
   const handleSearch = (key) => key && key !== searchKey && setSearchKey(key)
 
@@ -289,12 +313,12 @@ export default function Users() {
             align="center"
             total={totalItems}
             showTotal={(total, range) => `${range[0]}-${range[1]} của ${total} sản phẩm`}
-            defaultPageSize={currentPageSize}
-            defaultCurrent={currentPage}
+            defaultPageSize={pageSize}
+            defaultCurrent={page}
             showSizeChanger={true}
             onChange={(newPage, newPageSize) => {
-              setCurrentPage(newPage)
-              setCurrentPageSize(newPageSize)
+              setpage(newPage)
+              setpageSize(newPageSize)
             }}
           />
         </div>

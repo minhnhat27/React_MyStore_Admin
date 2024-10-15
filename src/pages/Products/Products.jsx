@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import productService from '../../services/products/productService'
 import { App, Button, Flex, Image, Input, Pagination, Popconfirm, Switch, Table } from 'antd'
 import { formatVND, gender, showError, toImageSrc, toTextValue } from '../../services/commonService'
 import { CheckOutlined, CloseOutlined, DeleteOutlined, HomeFilled } from '@ant-design/icons'
 import BreadcrumbLink from '../../components/BreadcrumbLink'
+import httpService from '../../services/http-service'
+import { PRODUCT_API } from '../../services/api-urls'
 
 const breadcrumbItems = [
   {
@@ -52,8 +53,9 @@ const columns = (handleChangeEnable, handleDeleteProduct, brandNames, categoryNa
   {
     title: 'Giới tính',
     dataIndex: 'gender',
-    filters: gender,
-    onFilter: (value, record) => record.gender.indexOf(value) === 0,
+    filters: gender.map((item) => ({ value: item.value, text: item.label })),
+    render: (value) => gender.find((e) => e.value === value)?.label,
+    onFilter: (value, record) => record.gender === value,
   },
   {
     title: 'Thương hiệu',
@@ -119,8 +121,8 @@ export default function Products() {
   const [searchKey, setSearchKey] = useState('')
 
   const [totalItems, setTotalItems] = useState(0)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [currentPageSize, setCurrentPageSize] = useState(10)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const [brandNames, setBrandNames] = useState([])
   const [categoryNames, setCategoryNames] = useState([])
@@ -129,18 +131,17 @@ export default function Products() {
     const fetchData = async () => {
       try {
         searchKey ? setSearchLoading(true) : setLoading(true)
-        const res = await productService.getAll(currentPage, currentPageSize, searchKey)
-        var newBrandNames = toTextValue([
-          ...new Set(res.data?.items?.map((order) => order.brandName)),
-        ])
+        const params = { page, pageSize, key: searchKey }
+        const data = await httpService.getWithParams(PRODUCT_API, params)
+        var newBrandNames = toTextValue([...new Set(data?.items.map((order) => order.brandName))])
         var newcategoryNames = toTextValue([
-          ...new Set(res.data?.items?.map((order) => order.categoryName)),
+          ...new Set(data?.items.map((order) => order.categoryName)),
         ])
 
         setBrandNames(newBrandNames)
         setCategoryNames(newcategoryNames)
-        setProducts(res.data?.items)
-        setTotalItems(res.data?.totalItems)
+        setProducts(data?.items)
+        setTotalItems(data?.totalItems)
       } catch (error) {
         setSearchKey('')
       } finally {
@@ -149,25 +150,27 @@ export default function Products() {
       }
     }
     fetchData()
-  }, [currentPage, currentPageSize, searchKey])
+  }, [page, pageSize, searchKey])
 
   const handleChangeEnable = async (id, value) => {
-    //setIsLoading(true)
+    // setIsLoading(true)
     try {
       const data = { enable: value }
-      await productService.updateEnable(id, data)
+      await httpService.put(PRODUCT_API + `/updateEnable/${id}`, data)
       message.success('Cập nhật thành công')
     } catch (error) {
       message.error(showError(error))
     }
-    //.finally(() => setIsLoading(false))
+    // finally {
+    //   setIsLoading(false)
+    // }
   }
 
   const handleSearch = (key) => key && key !== searchKey && setSearchKey(key)
 
   const handleDeleteProduct = async (id) => {
     try {
-      await productService.remove(id)
+      await httpService.del(PRODUCT_API + `/${id}`)
       setProducts(products.filter((item) => item.id !== id))
       message.success('Thành công')
     } catch (error) {
@@ -211,12 +214,12 @@ export default function Products() {
             className="py-4"
             total={totalItems}
             showTotal={(total, range) => `${range[0]}-${range[1]} của ${total} sản phẩm`}
-            defaultPageSize={currentPageSize}
-            defaultCurrent={currentPage}
+            defaultPageSize={pageSize}
+            defaultCurrent={page}
             showSizeChanger={true}
             onChange={(newPage, newPageSize) => {
-              setCurrentPage(newPage)
-              setCurrentPageSize(newPageSize)
+              setPage(newPage)
+              setPageSize(newPageSize)
             }}
           />
         </div>

@@ -33,6 +33,8 @@ import {
 } from '../../services/commonService'
 import { Link, useParams } from 'react-router-dom'
 import BreadcrumbLink from '../../components/BreadcrumbLink'
+import httpService from '../../services/http-service'
+import { PRODUCT_API } from '../../services/api-urls'
 
 const breadcrumbItems = (id) => [
   { path: '/', title: <HomeFilled /> },
@@ -84,7 +86,7 @@ export default function ProductDetail() {
         Object.keys(pAttr).forEach((key) => (pAttr[key] = toTextLabel(pAttr[key])))
         setProductAttributes(pAttr)
 
-        const { data } = await productService.getProduct(id)
+        const data = await httpService.get(PRODUCT_API + `/${id}`)
         form.setFieldsValue(data)
 
         const sizeIds = data.colorSizes[0].sizeInStocks?.map((item) => item.sizeId)
@@ -247,7 +249,7 @@ export default function ProductDetail() {
       Object.keys(data).forEach((key) => formData.append(key, data[key]))
 
       try {
-        await productService.update(id, formData)
+        await httpService.put(PRODUCT_API + `/${id}`, formData)
         message.success('Thành công')
         setUpdate(false)
       } catch (error) {

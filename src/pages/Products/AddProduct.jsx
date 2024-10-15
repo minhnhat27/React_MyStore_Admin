@@ -26,6 +26,8 @@ import productService from '../../services/products/productService'
 import { gender, getBase64, showError, toTextLabel } from '../../services/commonService'
 import { Link } from 'react-router-dom'
 import BreadcrumbLink from '../../components/BreadcrumbLink'
+import httpService from '../../services/http-service'
+import { PRODUCT_API } from '../../services/api-urls'
 
 const breadcrumbItems = [
   {
@@ -210,7 +212,7 @@ export default function AddProduct() {
 
       Object.keys(data).forEach((key) => formData.append(key, data[key]))
       try {
-        await productService.create(formData)
+        await httpService.post(PRODUCT_API, formData)
         handleClear()
         message.success('Thành công')
       } catch (error) {

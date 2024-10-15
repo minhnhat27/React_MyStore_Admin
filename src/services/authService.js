@@ -22,13 +22,13 @@ const getCurrentUser = () => {
   return user ? JSON.parse(user) : user
 }
 
-const loginGoogle = async (data) =>
-  await axios.post(API_URL + '/login-google', data).then((res) => {
-    const expires = 12 * 60 * 60 * 1000
-    const in12Hour = new Date(new Date().getTime() + expires)
-    Cookies.set('nstore_data', JSON.stringify(res.data), { expires: in12Hour })
-    return res
-  })
+// const loginGoogle = async (data) =>
+//   await axios.post(API_URL + '/login-google', data).then((res) => {
+//     const expires = 12 * 60 * 60 * 1000
+//     const in12Hour = new Date(new Date().getTime() + expires)
+//     Cookies.set('nstore_data', JSON.stringify(res.data), { expires: in12Hour })
+//     return res
+//   })
 
 const authService = {
   login,
@@ -36,6 +36,6 @@ const authService = {
   logout,
   sendCode,
   getCurrentUser,
-  loginGoogle,
+  // loginGoogle,
 }
 export default authService
