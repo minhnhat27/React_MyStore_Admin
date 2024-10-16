@@ -5,7 +5,7 @@ import { formatVND, gender, showError, toImageSrc, toTextValue } from '../../ser
 import { CheckOutlined, CloseOutlined, DeleteOutlined, HomeFilled } from '@ant-design/icons'
 import BreadcrumbLink from '../../components/BreadcrumbLink'
 import httpService from '../../services/http-service'
-import { PRODUCT_API } from '../../services/api-urls'
+import { PRODUCT_API } from '../../services/const'
 
 const breadcrumbItems = [
   {
@@ -113,7 +113,7 @@ const columns = (handleChangeEnable, handleDeleteProduct, brandNames, categoryNa
 ]
 
 export default function Products() {
-  const { message } = App.useApp()
+  const { message, notification } = App.useApp()
   const [products, setProducts] = useState([])
 
   const [loading, setLoading] = useState(false)
@@ -144,13 +144,14 @@ export default function Products() {
         setTotalItems(data?.totalItems)
       } catch (error) {
         setSearchKey('')
+        notification.error({ message: 'Thất bại', description: showError(error) })
       } finally {
         setLoading(false)
         setSearchLoading(false)
       }
     }
     fetchData()
-  }, [page, pageSize, searchKey])
+  }, [page, pageSize, searchKey, notification])
 
   const handleChangeEnable = async (id, value) => {
     // setIsLoading(true)

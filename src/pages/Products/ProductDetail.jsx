@@ -34,7 +34,7 @@ import {
 import { Link, useParams } from 'react-router-dom'
 import BreadcrumbLink from '../../components/BreadcrumbLink'
 import httpService from '../../services/http-service'
-import { PRODUCT_API } from '../../services/api-urls'
+import { PRODUCT_API } from '../../services/const'
 
 const breadcrumbItems = (id) => [
   { path: '/', title: <HomeFilled /> },

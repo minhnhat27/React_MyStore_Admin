@@ -28,7 +28,34 @@ export const isEmptyObject = (obj) => {
   return JSON.stringify(obj) === '{}'
 }
 
-export const formatDate = (isoDateStr) => new Date(isoDateStr).toLocaleString('en-GB')
+// export const formatDate = (isoDateStr) => new Date(isoDateStr).toLocaleString('en-GB')
+
+export const formatDate = (value) => {
+  const date = new Date(value)
+
+  return date
+    .toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+    .replaceAll('/', '-')
+}
+
+export const formatDateTime = (value) => {
+  const date = new Date(value)
+
+  return date
+    .toLocaleString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+    .replaceAll('/', '-')
+}
 
 export const toImageSrc = (url) => API_URL + '/' + url
 

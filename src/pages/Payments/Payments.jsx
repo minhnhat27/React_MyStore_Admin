@@ -14,9 +14,10 @@ import {
 } from 'antd'
 import { useState } from 'react'
 import { DeleteOutlined, EditTwoTone, HomeFilled } from '@ant-design/icons'
-import paymentService from '../../services/payments/paymentService'
 import { useEffect } from 'react'
 import { showError } from '../../services/commonService'
+import httpService from '../../services/http-service'
+import { PAYMENT_API } from '../../services/const'
 
 const breadcrumbItems = [
   {
@@ -79,8 +80,8 @@ export default function Payments() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const res = await paymentService.getAll()
-        setPayments(res.data)
+        const data = await httpService.get(PAYMENT_API)
+        setPayments(data)
       } catch (error) {
         message.error(showError(error))
       } finally {
@@ -90,42 +91,37 @@ export default function Payments() {
     fetchData()
   }, [message])
 
-  const handleSave = () => {
+  const handleSave = async (values) => {
     setSaveLoading(true)
-    if (isUpdate) {
-      paymentService
-        .update(paymentId, form.getFieldsValue())
-        .then((res) => {
-          const newPayments = payments.map((item) => (item.id === paymentId ? res.data : item))
-          setPayments(newPayments)
-
-          form.resetFields()
-          setIsUpdate(false)
-          message.success('Thành công')
-        })
-        .catch((err) => message.error(showError(err)))
-        .finally(() => setSaveLoading(false))
-    } else {
-      paymentService
-        .create(form.getFieldsValue())
-        .then((res) => {
-          setPayments([...payments, res.data])
-          form.resetFields()
-          message.success('Thành công')
-        })
-        .catch((err) => message.error(showError(err)))
-        .finally(() => setSaveLoading(false))
+    try {
+      if (isUpdate) {
+        const data = await httpService.put(PAYMENT_API + `/${paymentId}`, values)
+        const newPayments = payments.map((item) => (item.id === paymentId ? data : item))
+        setPayments(newPayments)
+        form.resetFields()
+        setIsUpdate(false)
+        message.success('Thành công')
+      } else {
+        const data = await httpService.post(PAYMENT_API, values)
+        setPayments([...payments, data])
+        form.resetFields()
+        message.success('Thành công')
+      }
+    } catch (error) {
+      message.error(showError(error))
+    } finally {
+      setSaveLoading(false)
     }
   }
 
   const handleDelete = async (id) => {
-    await paymentService
-      .remove(id)
-      .then(() => {
-        setPayments(payments.filter((item) => item.id !== id))
-        message.success('Thành công')
-      })
-      .catch((err) => message.error(showError(err)))
+    try {
+      await httpService.del(PAYMENT_API + `/${id}`)
+      setPayments(payments.filter((item) => item.id !== id))
+      message.success('Thành công')
+    } catch (error) {
+      message.error(showError(error))
+    }
   }
 
   const onEdit = (record) => {

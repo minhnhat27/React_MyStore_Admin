@@ -65,9 +65,9 @@ export default function DefaultLayout({ children }) {
             <Content className="px-4 dark:bg-gradient-to-tl from-slate-700 via-black to-slate-900">
               {children}
             </Content>
-            <FloatButton.BackTop />
           </Layout>
         </Layout>
+        <FloatButton.BackTop />
       </App>
     </ConfigProvider>
   )

@@ -1,9 +1,11 @@
-import { Breadcrumb, Button, Card, Form, Input, Popconfirm, Spin, Table, Tooltip, App } from 'antd'
+import { Button, Card, Form, Input, Popconfirm, Spin, Table, Tooltip, App } from 'antd'
 import { useState } from 'react'
 import { DeleteOutlined, EditTwoTone, HomeFilled } from '@ant-design/icons'
-import sizeService from '../../services/products/sizeService'
 import { useEffect } from 'react'
 import { showError } from '../../services/commonService'
+import httpService from '../../services/http-service'
+import { SIZE_API } from '../../services/const'
+import BreadcrumbLink from '../../components/BreadcrumbLink'
 
 const breadcrumbItems = [
   {
@@ -59,8 +61,8 @@ export default function Sizes() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const res = await sizeService.getAll()
-        setSizes(res.data)
+        const data = await httpService.get(SIZE_API)
+        setSizes(data)
       } catch (error) {
         message.error(showError(error))
       } finally {
@@ -70,42 +72,37 @@ export default function Sizes() {
     fetchData()
   }, [message])
 
-  const handleSave = () => {
+  const handleSave = async (values) => {
     setSaveLoading(true)
-    if (isUpdate) {
-      sizeService
-        .update(sizeId, form.getFieldsValue())
-        .then((res) => {
-          const newsizes = sizes.map((item) => (item.id === sizeId ? res.data : item))
-          setSizes(newsizes)
+    try {
+      if (isUpdate) {
+        const data = await httpService.put(SIZE_API + `/${sizeId}`, values)
 
-          form.resetFields()
-          setIsUpdate(false)
-          message.success('Thành công')
-        })
-        .catch((err) => message.error(showError(err)))
-        .finally(() => setSaveLoading(false))
-    } else {
-      sizeService
-        .create(form.getFieldsValue())
-        .then((res) => {
-          setSizes([...sizes, res.data])
-          form.resetFields()
-          message.success('Thành công')
-        })
-        .catch((err) => message.error(showError(err)))
-        .finally(() => setSaveLoading(false))
+        setSizes((pre) => pre.map((item) => (item.id === sizeId ? data : item)))
+        form.resetFields()
+        setIsUpdate(false)
+        message.success('Thành công')
+      } else {
+        const data = await httpService.post(SIZE_API, values)
+        setSizes((pre) => [...pre, data])
+        form.resetFields()
+        message.success('Thành công')
+      }
+    } catch (error) {
+      message.error(showError(error))
+    } finally {
+      setSaveLoading(false)
     }
   }
 
   const handleDelete = async (id) => {
-    await sizeService
-      .remove(id)
-      .then(() => {
-        setSizes(sizes.filter((item) => item.id !== id))
-        message.success('Thành công')
-      })
-      .catch((err) => message.error(showError(err)))
+    try {
+      await httpService.del(SIZE_API + `/${sizeId}`)
+      setSizes((pre) => pre.filter((item) => item.id !== id))
+      message.success('Thành công')
+    } catch (error) {
+      message.error(showError(error))
+    }
   }
 
   const onEdit = (record) => {
@@ -121,7 +118,7 @@ export default function Sizes() {
   return (
     <>
       <div className="pb-4">
-        <Breadcrumb className="py-2" items={breadcrumbItems} />
+        <BreadcrumbLink breadcrumbItems={breadcrumbItems} />
         <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
           <Card className="md:col-span-2 drop-shadow">
             <Table
@@ -134,7 +131,7 @@ export default function Sizes() {
               loading={loading}
             />
           </Card>
-          <Card title="Size" className="h-fit bg-white drop-shadow">
+          <Card title="Size" className="h-fit sticky top-28 bg-white drop-shadow">
             <Form layout="vertical" form={form} disabled={saveLoading} onFinish={handleSave}>
               <Form.Item
                 label="Tên size"

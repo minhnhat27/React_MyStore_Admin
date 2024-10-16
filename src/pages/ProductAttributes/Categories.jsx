@@ -1,9 +1,10 @@
 import { Breadcrumb, Button, Card, Form, Input, Popconfirm, Spin, Table, Tooltip, App } from 'antd'
 import { useState } from 'react'
 import { DeleteOutlined, EditTwoTone, HomeFilled } from '@ant-design/icons'
-import categoryService from '../../services/products/categoryService'
 import { useEffect } from 'react'
 import { showError } from '../../services/commonService'
+import httpService from '../../services/http-service'
+import { CATEGORY_API, MATERIAL_API } from '../../services/const'
 
 const breadcrumbItems = [
   {
@@ -59,8 +60,8 @@ export default function Category() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const res = await categoryService.getAll()
-        setCategories(res.data)
+        const data = await httpService.get(MATERIAL_API)
+        setCategories(data)
       } catch (error) {
         message.error(showError(error))
       } finally {
@@ -70,42 +71,37 @@ export default function Category() {
     fetchData()
   }, [message])
 
-  const handleSave = () => {
+  const handleSave = async (values) => {
     setSaveLoading(true)
-    if (isUpdate) {
-      categoryService
-        .update(categoryId, form.getFieldsValue())
-        .then((res) => {
-          const newCategories = categories.map((item) => (item.id === categoryId ? res.data : item))
-          setCategories(newCategories)
+    try {
+      if (isUpdate) {
+        const data = await httpService.put(CATEGORY_API + `/${categoryId}`, values)
+        setCategories((pre) => pre.map((item) => (item.id === categoryId ? data : item)))
 
-          form.resetFields()
-          setIsUpdate(false)
-          message.success('Thành công')
-        })
-        .catch((err) => message.error(showError(err)))
-        .finally(() => setSaveLoading(false))
-    } else {
-      categoryService
-        .create(form.getFieldsValue())
-        .then((res) => {
-          setCategories([...categories, res.data])
-          form.resetFields()
-          message.success('Thành công')
-        })
-        .catch((err) => message.error(showError(err)))
-        .finally(() => setSaveLoading(false))
+        form.resetFields()
+        setIsUpdate(false)
+        message.success('Thành công')
+      } else {
+        const data = await httpService.post(CATEGORY_API, values)
+        setCategories((pre) => [...pre, data])
+        form.resetFields()
+        message.success('Thành công')
+      }
+    } catch (error) {
+      message.error(showError(error))
+    } finally {
+      setSaveLoading(false)
     }
   }
 
   const handleDelete = async (id) => {
-    await categoryService
-      .remove(id)
-      .then(() => {
-        setCategories(categories.filter((item) => item.id !== id))
-        message.success('Thành công')
-      })
-      .catch((err) => message.error(showError(err)))
+    try {
+      await httpService.del(CATEGORY_API + `/${categoryId}`)
+      setCategories((pre) => pre.filter((item) => item.id !== id))
+      message.success('Thành công')
+    } catch (error) {
+      message.error(showError(error))
+    }
   }
 
   const onEdit = (record) => {

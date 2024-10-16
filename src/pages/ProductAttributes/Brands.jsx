@@ -14,9 +14,10 @@ import {
 import { getBase64, showError, toImageSrc } from '../../services/commonService'
 import { useState } from 'react'
 import { PlusOutlined, DeleteOutlined, EditTwoTone, HomeFilled } from '@ant-design/icons'
-import brandService from '../../services/products/brandService'
 import { useEffect } from 'react'
 import BreadcrumbLink from '../../components/BreadcrumbLink'
+import httpService from '../../services/http-service'
+import { BRAND_API } from '../../services/const'
 
 const breadcrumbItems = [
   {
@@ -91,8 +92,8 @@ export default function Brand() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const res = await brandService.getAll()
-        setBrands(res.data)
+        const data = await httpService.get(BRAND_API)
+        setBrands(data)
       } catch (error) {
         message.error(showError(error))
       } finally {
@@ -111,56 +112,52 @@ export default function Brand() {
   }
   const handleChangeFile = ({ fileList: newFileList }) => setFileList(newFileList)
 
-  const handleSave = () => {
+  const handleSave = async (values) => {
     const formData = new FormData()
     setSaveLoading(true)
-    if (isUpdate) {
-      var imageUrl = form.getFieldValue('image')[0]?.url
-      const data = {
-        ...form.getFieldsValue(),
-        imageUrl: imageUrl,
-        image: imageUrl ? null : fileList[0]?.originFileObj,
+    try {
+      if (isUpdate) {
+        var imageUrl = values.image[0]?.url // form.getFieldValue('image')[0]?.url
+        const dataReq = {
+          ...values,
+          imageUrl: imageUrl,
+          image: imageUrl ? null : fileList[0]?.originFileObj,
+        }
+        Object.keys(dataReq).forEach((key) => formData.append(key, dataReq[key]))
+
+        const data = await httpService.put(BRAND_API + `/${brandId}`, formData)
+
+        setBrands((pre) => pre.map((item) => (item.id === brandId ? data : item)))
+
+        setIsUpdate(false)
+        form.resetFields()
+        setFileList([])
+        message.success('Thành công')
+      } else {
+        const dataReq = { ...values, image: fileList[0]?.originFileObj }
+        Object.keys(dataReq).forEach((key) => formData.append(key, dataReq[key]))
+
+        const data = await httpService.post(BRAND_API, formData)
+        setBrands((pre) => [...pre, data])
+        form.resetFields()
+        setFileList([])
+        message.success('Thành công')
       }
-      Object.keys(data).forEach((key) => formData.append(key, data[key]))
-
-      brandService
-        .update(brandId, formData)
-        .then((res) => {
-          const newBrands = brands.map((item) => (item.id === brandId ? res.data : item))
-          setBrands(newBrands)
-
-          setIsUpdate(false)
-          form.resetFields()
-          setFileList([])
-          message.success('Thành công')
-        })
-        .catch((err) => message.error(showError(err)))
-        .finally(() => setSaveLoading(false))
-    } else {
-      const data = { ...form.getFieldsValue(), image: fileList[0]?.originFileObj }
-      Object.keys(data).forEach((key) => formData.append(key, data[key]))
-
-      brandService
-        .create(formData)
-        .then((res) => {
-          setBrands([...brands, res.data])
-          form.resetFields()
-          setFileList([])
-          message.success('Thành công')
-        })
-        .catch((err) => message.error(showError(err)))
-        .finally(() => setSaveLoading(false))
+    } catch (error) {
+      message.error(showError(error))
+    } finally {
+      setSaveLoading(false)
     }
   }
 
   const handleDelete = async (id) => {
-    await brandService
-      .remove(id)
-      .then(() => {
-        setBrands(brands.filter((item) => item.id !== id))
-        message.success('Success')
-      })
-      .catch((err) => message.error(showError(err)))
+    try {
+      await httpService.del(BRAND_API + `/${id}`)
+      setBrands((pre) => pre.filter((item) => item.id !== id))
+      message.success('Success')
+    } catch (error) {
+      message.error(showError(error))
+    }
   }
 
   const onEdit = (brand) => {

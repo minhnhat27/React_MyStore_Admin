@@ -23,7 +23,7 @@ import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 import BreadcrumbLink from '../../components/BreadcrumbLink'
 import httpService from '../../services/http-service'
-import { ACCOUNT_API } from '../../services/api-urls'
+import { ACCOUNT_API } from '../../services/const'
 dayjs.extend(customParseFormat)
 const dateFormat = 'YYYY-MM-DD'
 

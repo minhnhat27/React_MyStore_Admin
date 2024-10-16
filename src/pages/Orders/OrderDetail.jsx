@@ -6,7 +6,7 @@ import { useLoading } from '../../App'
 import BreadcrumbLink from '../../components/BreadcrumbLink'
 import { HomeFilled } from '@ant-design/icons'
 import httpService from '../../services/http-service'
-import { ORDER_API } from '../../services/api-urls'
+import { ORDER_API } from '../../services/const'
 
 const breadcrumbItems = [
   {

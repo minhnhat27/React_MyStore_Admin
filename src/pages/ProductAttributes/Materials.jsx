@@ -1,8 +1,9 @@
 import { Breadcrumb, Button, Card, Form, Input, Popconfirm, Spin, Table, Tooltip, App } from 'antd'
 import { useEffect, useState } from 'react'
 import { DeleteOutlined, EditTwoTone, HomeFilled } from '@ant-design/icons'
-import materialService from '../../services/products/materialService'
 import { showError } from '../../services/commonService'
+import httpService from '../../services/http-service'
+import { MATERIAL_API } from '../../services/const'
 
 const breadcrumbItems = [
   {
@@ -58,8 +59,8 @@ export default function Material() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const res = await materialService.getAll()
-        setMaterials(res.data)
+        const data = await httpService.get(MATERIAL_API)
+        setMaterials(data)
       } catch (error) {
         message.error(showError(error))
       } finally {
@@ -69,42 +70,36 @@ export default function Material() {
     fetchData()
   }, [message])
 
-  const handleSave = () => {
+  const handleSave = async (values) => {
     setSaveLoading(true)
-    if (isUpdate) {
-      materialService
-        .update(materialId, form.getFieldsValue())
-        .then((res) => {
-          const newMaterials = materials.map((item) => (item.id === materialId ? res.data : item))
-          setMaterials(newMaterials)
-
-          form.resetFields()
-          setIsUpdate(false)
-          message.success('Thành công')
-        })
-        .catch((err) => message.error(showError(err)))
-        .finally(() => setSaveLoading(false))
-    } else {
-      materialService
-        .create(form.getFieldsValue())
-        .then((res) => {
-          setMaterials([...materials, res.data])
-          form.resetFields()
-          message.success('Thành công')
-        })
-        .catch((err) => message.error(showError(err)))
-        .finally(() => setSaveLoading(false))
+    try {
+      if (isUpdate) {
+        const data = await httpService.put(MATERIAL_API + `/${materialId}`, values)
+        setMaterials((pre) => pre.map((item) => (item.id === materialId ? data : item)))
+        form.resetFields()
+        setIsUpdate(false)
+        message.success('Thành công')
+      } else {
+        const data = await httpService.post(MATERIAL_API, values)
+        setMaterials((pre) => [...pre, data])
+        form.resetFields()
+        message.success('Thành công')
+      }
+    } catch (error) {
+      message.error(showError(error))
+    } finally {
+      setSaveLoading(false)
     }
   }
 
   const handleDelete = async (id) => {
-    await materialService
-      .remove(id)
-      .then(() => {
-        setMaterials(materials.filter((item) => item.id !== id))
-        message.success('Thành công')
-      })
-      .catch((err) => message.error(showError(err)))
+    try {
+      await httpService.del(MATERIAL_API + `/${materialId}`)
+      setMaterials((pre) => pre.filter((item) => item.id !== id))
+      message.success('Thành công')
+    } catch (error) {
+      message.error(showError(error))
+    }
   }
 
   const onEdit = (record) => {

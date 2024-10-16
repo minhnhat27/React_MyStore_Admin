@@ -1,5 +1,5 @@
 import httpService from '../http-service'
-import { BRAND_API, CATEGORY_API, MATERIAL_API, SIZE_API } from '../api-urls'
+import { BRAND_API, CATEGORY_API, MATERIAL_API, SIZE_API } from '../const'
 
 const fetchProductAttributes = async () => {
   try {
