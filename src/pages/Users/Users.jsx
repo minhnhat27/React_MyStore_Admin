@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from 'antd'
 
-import { formatDate, showError } from '../../services/commonService'
+import { formatDate, formatDateTime, showError } from '../../services/commonService'
 import { HomeFilled, LockOutlined, UnlockOutlined } from '@ant-design/icons'
 import { Link } from 'react-router-dom'
 
@@ -85,7 +85,7 @@ const columns = (onLockOut, handleUnlock) => [
     dataIndex: 'lockoutEnd',
     filters: [
       { value: false, text: 'Hoạt động' },
-      { value: true, text: 'Bị vô hiệu' },
+      { value: true, text: 'Bị khóa' },
     ],
     onFilter: (value, record) => record.lockedOut === value,
     render: (value) => {
@@ -93,7 +93,7 @@ const columns = (onLockOut, handleUnlock) => [
         const date = new Date(value)
         return (
           <span className="font-semibold text-red-600">
-            {date.getFullYear() >= 3000 ? 'Vĩnh viễn' : formatDate(value)}
+            {date.getFullYear() >= 3000 ? 'Vĩnh viễn' : formatDateTime(value)}
           </span>
         )
       } else

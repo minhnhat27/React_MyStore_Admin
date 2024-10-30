@@ -146,7 +146,7 @@ export default function ProductDetail() {
           return { ...exist }
         } else return { sizeId: sizeId }
       })
-      return { colorName: color.colorName, sizeInStocks: sizeInStocks }
+      return { colorName: color.colorName, id: color.id, sizeInStocks: sizeInStocks }
     })
 
     // const newList = colors.map((color) => {
@@ -163,7 +163,6 @@ export default function ProductDetail() {
     //     return { colorName: color.colorName, sizeInStocks: sizeInStocks }
     //   }
     // })
-
     setSizeListValue(newL)
   }
 

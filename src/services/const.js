@@ -14,11 +14,18 @@ export const VOUCHER_API = base + '/vouchers'
 export const PAYMENT_API = base + '/payments'
 export const ORDER_API = base + '/orders'
 export const ACCOUNT_API = base + '/account'
+export const STATISTICS_API = base + '/statistics'
 
 export const Gender = {
   0: 'Nam',
   1: 'Nữ',
   2: 'Unisex',
+}
+
+export const RequiredNote = {
+  0: 'Cho thử hàng',
+  1: 'Cho xem hàng không thử',
+  2: 'Không cho xem hàng',
 }
 
 export const OrderStatus = {

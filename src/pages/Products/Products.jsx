@@ -188,7 +188,7 @@ export default function Products() {
             <Input.Search
               size="large"
               allowClear
-              placeholder="ID, tên, giá,..."
+              placeholder="ID, tên, thương hiệu,..."
               loading={searchLoading}
               onSearch={(key) => handleSearch(key)}
               onChange={(e) => e.target.value === '' && setSearchKey('')}

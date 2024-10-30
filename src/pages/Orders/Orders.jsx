@@ -13,11 +13,15 @@ import {
   Button,
   Divider,
   Drawer,
+  Form,
   Image,
   Input,
+  InputNumber,
   List,
+  Modal,
   Pagination,
   Popconfirm,
+  Select,
   Table,
   Tabs,
   Tag,
@@ -31,6 +35,7 @@ import {
   OrderStatus,
   ProcessingStatus,
   ReceivedStatus,
+  RequiredNote,
 } from '../../services/const'
 
 const breadcrumbItems = [
@@ -43,7 +48,14 @@ const breadcrumbItems = [
   },
 ]
 
-const columns = (loading, paymentMethods, openOrderDetails, nextOrderStatus, cancelOrder) => [
+const columns = (
+  loading,
+  paymentMethods,
+  openOrderDetails,
+  nextOrderStatus,
+  cancelOrder,
+  onOpenSendOrder,
+) => [
   {
     title: 'ID',
     dataIndex: 'id',
@@ -74,7 +86,7 @@ const columns = (loading, paymentMethods, openOrderDetails, nextOrderStatus, can
   },
   {
     title: 'Phương thức',
-    dataIndex: 'paymentMethod',
+    dataIndex: 'paymentMethodName',
     align: 'center',
     filters: paymentMethods,
     onFilter: (value, record) => record.paymentMethod === value,
@@ -145,11 +157,9 @@ const columns = (loading, paymentMethods, openOrderDetails, nextOrderStatus, can
           </Popconfirm>
         ) : (
           value === ConfirmedStatus && (
-            <Popconfirm title="Xác nhận gọi đơn vị vận chuyển!">
-              <Button type="dashed" danger>
-                Giao đơn
-              </Button>
-            </Popconfirm>
+            <Button onClick={() => onOpenSendOrder(record.id)} type="dashed" danger>
+              Giao đơn
+            </Button>
           )
         )}
       </>
@@ -159,12 +169,18 @@ const columns = (loading, paymentMethods, openOrderDetails, nextOrderStatus, can
 
 export default function Orders() {
   const { notification, message } = App.useApp()
+
+  const [form] = Form.useForm()
+
+  const [sendOrderOpen, setSendOrderOpen] = useState(false)
   const [orders, setOrders] = useState([])
   const [orderDetails, setOrderDetails] = useState()
 
   const [searchParams, setSearchParams] = useSearchParams()
 
+  const [orderId, setOrderId] = useState()
   const [loading, setLoading] = useState(false)
+  const [sendOrderLoading, setSendOrderLoading] = useState(false)
   const [orderLoading, setOrderLoading] = useState(false)
 
   const [searchLoading, setSearchLoading] = useState(false)
@@ -195,14 +211,14 @@ export default function Orders() {
           data = await httpService.getWithParams(ORDER_API + `/status/${orderStatus}`, params)
         }
 
-        var newPaymentMethod = [...new Set(data?.items?.map((order) => order.paymentMethod))].map(
-          (value) => {
-            return {
-              value: value,
-              text: value,
-            }
-          },
-        )
+        var newPaymentMethod = [
+          ...new Set(data?.items?.map((order) => order.paymentMethodName)),
+        ].map((value) => {
+          return {
+            value: value,
+            text: value,
+          }
+        })
 
         setPaymentMethods(newPaymentMethod)
         setOrders(data?.items)
@@ -267,12 +283,127 @@ export default function Orders() {
     }
   }
 
-  const sendOrder = async (id) => {
-    
+  const onOpenSendOrder = (id) => {
+    setOrderId(id)
+    setSendOrderOpen(true)
+  }
+
+  const sendOrder = async (values) => {
+    try {
+      setSendOrderLoading(true)
+      await httpService.put(ORDER_API + `/shipping/${orderId}`, values)
+
+      notification.success({
+        message: 'Thành công',
+        description: 'Đã gửi đơn hàng cho đơn vị vận chuyển',
+      })
+      setOrderId(undefined)
+      setOrders((pre) => pre.filter((e) => e.id !== orderId))
+      setSendOrderOpen(false)
+    } catch (error) {
+      message.error(showError(error))
+    } finally {
+      setSendOrderLoading(false)
+    }
   }
 
   return (
     <>
+      <Modal
+        open={sendOrderOpen}
+        title="Quy cách đóng gói (Đơn vị vận chuyển: Giao hàng nhanh)"
+        okText="Xác nhận"
+        cancelText="Đóng"
+        centered
+        confirmLoading={sendOrderLoading}
+        okButtonProps={{ autoFocus: true, htmlType: 'submit' }}
+        cancelButtonProps={{ disabled: sendOrderLoading }}
+        onCancel={() => setSendOrderOpen(false)}
+        maskClosable={false}
+        destroyOnClose
+        modalRender={(dom) => (
+          <Form
+            layout="vertical"
+            form={form}
+            clearOnDestroy
+            initialValues={{
+              requiredNote: 0,
+            }}
+            onFinish={sendOrder}
+          >
+            {dom}
+          </Form>
+        )}
+      >
+        <div className="grid grid-cols-2 gap-2">
+          <Form.Item
+            name="requiredNote"
+            label="Yêu cầu giao hàng"
+            rules={[{ required: true, message: 'Vui lòng chọn yêu cầu' }]}
+          >
+            <Select
+              options={Object.entries(RequiredNote).map(([key, value]) => ({
+                value: parseInt(key),
+                label: value,
+              }))}
+              placeholder="Chọn"
+              className="w-full"
+              size="large"
+            />
+          </Form.Item>
+          <Form.Item
+            name="weight"
+            label="Cân nặng"
+            rules={[{ required: true, message: 'Vui lòng nhập cân nặng' }]}
+          >
+            <InputNumber
+              formatter={(value) => `${value}(g)`}
+              parser={(value) => value?.replace('(g)', '')}
+              className="w-full"
+              size="large"
+            />
+          </Form.Item>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <Form.Item
+            name="length"
+            label="Chiều dài"
+            rules={[{ required: true, message: 'Vui lòng nhập chiều dài' }]}
+          >
+            <InputNumber
+              formatter={(value) => `${value}(cm)`}
+              parser={(value) => value?.replace('(cm)', '')}
+              className="w-full"
+              size="large"
+            />
+          </Form.Item>
+          <Form.Item
+            name="width"
+            label="Chiều rộng"
+            rules={[{ required: true, message: 'Vui lòng nhập chiều rộng' }]}
+          >
+            <InputNumber
+              formatter={(value) => `${value}(cm)`}
+              parser={(value) => value?.replace('(cm)', '')}
+              className="w-full"
+              size="large"
+            />
+          </Form.Item>
+          <Form.Item
+            name="height"
+            label="Chiều cao"
+            rules={[{ required: true, message: 'Vui lòng nhập chiều cao' }]}
+          >
+            <InputNumber
+              formatter={(value) => `${value}(cm)`}
+              parser={(value) => value?.replace('(cm)', '')}
+              className="w-full"
+              size="large"
+            />
+          </Form.Item>
+        </div>
+      </Modal>
+
       <div className="pb-4">
         <Breadcrumb className="py-2" items={breadcrumbItems} />
         <div className="py-2 px-4 space-y-2 bg-white rounded-lg drop-shadow">
@@ -306,6 +437,7 @@ export default function Orders() {
                       openOrderDetails,
                       nextOrderStatus,
                       cancelOrder,
+                      onOpenSendOrder,
                     )}
                     dataSource={orders}
                     rowKey={(record) => record.id}

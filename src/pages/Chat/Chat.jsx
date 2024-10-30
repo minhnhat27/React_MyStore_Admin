@@ -8,7 +8,6 @@ import {
   PaperClipOutlined,
   SendOutlined,
   SmileOutlined,
-  UserOutlined,
   WarningFilled,
 } from '@ant-design/icons'
 import { getBase64 } from '../../services/commonService'
@@ -173,13 +172,16 @@ export default function Chat() {
                     >
                       <List.Item.Meta
                         className="px-2"
+                        avatar={
+                          <Avatar src={`https://api.dicebear.com/7.x/miniavs/svg?seed=${i}`} />
+                        }
                         title={
-                          <div className="flex justify-center md:justify-start items-center gap-2">
-                            <Avatar>
-                              <UserOutlined />
-                            </Avatar>
-                            <span className="hidden md:block">Người dùng {i + 1}</span>
-                          </div>
+                          // <div className="flex justify-center md:justify-start items-center gap-2">
+                          //   <Avatar>
+                          //     <UserOutlined />
+                          //   </Avatar>
+                          // </div>
+                          <span className="hidden md:block">Người dùng {i + 1}</span>
                         }
                       />
                     </List.Item>
