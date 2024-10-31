@@ -9,6 +9,7 @@ import {
   ProductOutlined,
   DeploymentUnitOutlined,
   MessageFilled,
+  GiftOutlined,
 } from '@ant-design/icons'
 
 import DefaultLayout from '../components/Layout/DefaultLayout'
@@ -27,12 +28,13 @@ import Users from '../pages/Users'
 import Message from '../pages/Chat'
 import Sizes from '../pages/ProductAttributes/Sizes'
 import Payments from '../pages/Payments'
+import Voucher from '../pages/Voucher'
 
 export const navigateItems = [
   { key: '/home', icon: <PieChartOutlined />, label: 'Trang chủ' },
   { key: '/orders-management', icon: <ContainerOutlined />, label: 'Đơn hàng' },
   { key: '/products-management', icon: <ProductOutlined />, label: 'Sản phẩm' },
-
+  { key: '/vouchers-management', icon: <GiftOutlined />, label: 'Mã giảm giá' },
   {
     key: '/message',
     icon: <MessageFilled />,
@@ -69,6 +71,7 @@ export const privateRoutes = [
   { path: '/products-management/add-product', component: AddProduct },
 
   { path: '/users-management', component: Users },
+  { path: '/vouchers-management', component: Voucher },
 
   { path: '/orders-management', component: Orders },
   { path: '/orders-management/order-detail/:id', component: OrderDetail },

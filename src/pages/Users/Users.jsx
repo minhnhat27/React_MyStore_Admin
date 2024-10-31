@@ -15,9 +15,8 @@ import {
   Tooltip,
 } from 'antd'
 
-import { formatDate, formatDateTime, showError } from '../../services/commonService'
+import { formatDateTime, showError } from '../../services/commonService'
 import { HomeFilled, LockOutlined, UnlockOutlined } from '@ant-design/icons'
-import { Link } from 'react-router-dom'
 
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
@@ -41,7 +40,7 @@ const columns = (onLockOut, handleUnlock) => [
   {
     title: 'Họ và tên',
     dataIndex: 'fullname',
-    width: 100,
+    width: 150,
     sorter: (a, b) => a.fullname.localeCompare(b.fullname),
   },
   {
@@ -71,13 +70,13 @@ const columns = (onLockOut, handleUnlock) => [
   {
     title: 'Ngày tạo',
     dataIndex: 'createdAt',
-    render: (value) => value !== null && formatDate(value),
+    render: (value) => value !== null && formatDateTime(value),
     sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
   },
   {
     title: 'Cập nhật lần cuối',
     dataIndex: 'updatedAt',
-    render: (value) => value !== null && formatDate(value),
+    render: (value) => value !== null && formatDateTime(value),
     sorter: (a, b) => new Date(a.updatedAt) - new Date(b.updatedAt),
   },
   {
@@ -290,11 +289,6 @@ export default function Users() {
               onSearch={(key) => handleSearch(key)}
               onChange={(e) => e.target.value === '' && setSearchKey('')}
             />
-            <Link to="add-user">
-              <Button size="large" type="primary" className="flex items-center">
-                + Add new
-              </Button>
-            </Link>
           </div>
 
           <Table

@@ -100,7 +100,7 @@ const columns = (handleChangeEnable, handleDeleteProduct, brandNames, categoryNa
     render: (_, record) => (
       <Flex className="space-x-2">
         <Link to={`product-detail/${record.id}`}>
-          <Button>Detail</Button>
+          <Button>Chi tiết</Button>
         </Link>
         <Popconfirm title="Xác nhận xóa?" onConfirm={() => handleDeleteProduct(record.id)}>
           <Button className="flex items-center">

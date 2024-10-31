@@ -1,7 +1,7 @@
 import { Card, Divider, Statistic } from 'antd'
 import { ArrowUpOutlined, IdcardTwoTone, PieChartTwoTone, ShopTwoTone } from '@ant-design/icons'
 import { formatVND } from '../../services/commonService'
-import { Column, DualAxes } from '@ant-design/charts'
+import { DualAxes } from '@ant-design/charts'
 import { STATISTICS_API } from '../../services/const'
 import { useEffect, useState } from 'react'
 import httpService from '../../services/http-service'
@@ -10,14 +10,19 @@ export default function Home() {
   // const [loading, setLoading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [general, setGeneral] = useState()
+
   const [revenueThisYear, setRevenueThisYear] = useState([])
+  const [total, setTotal] = useState(0)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const data = await httpService.get(`${STATISTICS_API}/revenue-this-year`)
-        setRevenueThisYear(data)
-      } catch (error) {}
+        setRevenueThisYear(data.statistics)
+        setTotal(data.total)
+      } catch (error) {
+        console.log(error)
+      }
     }
     fetchData()
   }, [])
@@ -35,28 +40,6 @@ export default function Home() {
     }
     fetchData()
   }, [])
-
-  const config = {
-    data: revenueThisYear,
-    xField: 'month',
-    yField: 'revenue',
-    // colorField: 'year',
-    // group: true,
-    style: {
-      inset: 5,
-    },
-    onReady: ({ chart }) => {
-      try {
-        chart.on('afterrender', () => {
-          // chart.emit('legend:filter', {
-          //   data: { channel: 'color', values: ['London'] },
-          // })
-        })
-      } catch (e) {
-        console.error(e)
-      }
-    },
-  }
 
   const configDualAxes = {
     xField: 'month',
@@ -76,6 +59,10 @@ export default function Home() {
       {
         type: 'interval',
         yField: 'revenue',
+        axis: { y: { labelFormatter: (d) => formatVND.format(d) } },
+        tooltip: {
+          items: [{ channel: 'y', valueFormatter: (d) => formatVND.format(d) }],
+        },
       },
       {
         type: 'line',
@@ -89,8 +76,8 @@ export default function Home() {
   }
 
   return (
-    <div className="p-4">
-      <div className="grid grid-cols-4 gap-8">
+    <div className="py-2 md:p-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
         <Card loading={loading} className="drop-shadow rounded-sm" bordered={false}>
           <div>Tổng đơn hàng</div>
           <div className="flex gap-2 items-center mt-2">
@@ -113,16 +100,31 @@ export default function Home() {
           </div>
         </Card>
         <Card className="drop-shadow rounded-sm" bordered={false}>
-          <div>Tổng đơn hàng</div>
+          <div>Đơn bị hủy</div>
           <div className="flex gap-2 items-center mt-2">
             <PieChartTwoTone className="text-4xl" />
-            <div className="text-lg">1.345</div>
+            <div className="text-lg">15</div>
           </div>
         </Card>
       </div>
-      <DualAxes {...configDualAxes} />
-      <Column {...config} />
-      <Divider plain style={{ fontSize: 24 }}>
+      <Divider plain style={{ fontSize: 18 }}>
+        Doanh thu năm {new Date().getFullYear()}
+      </Divider>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+        <div className="md:col-span-3 h-72 md:h-[50vh] flex-1">
+          <DualAxes {...configDualAxes} />
+        </div>
+        <Card className="self-center shadow-lg rounded-sm h-fit" bordered={false}>
+          <Statistic
+            title="Tổng doanh thu"
+            value={formatVND.format(total)}
+            valueStyle={{ color: 'red' }}
+            // prefix={<ArrowUpOutlined />}
+          />
+        </Card>
+      </div>
+      {/* <Column {...config} /> */}
+      <Divider plain style={{ fontSize: 18 }}>
         Thống kê tháng {new Date().getMonth() + 1}
       </Divider>
       <div className="grid grid-cols-6 gap-8">
