@@ -126,3 +126,12 @@ export function base64toFile(dataurl, filename) {
   }
   return new File([u8arr], filename, { type: mime })
 }
+
+export const getTimeHHmm = (value) => {
+  const date = value ? new Date(value) : new Date()
+
+  return date.toLocaleString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}

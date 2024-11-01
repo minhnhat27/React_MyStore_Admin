@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useChat } from '../../App'
 
-import { Avatar, Breadcrumb, Button, Form, Image, Input, List, Result, Upload } from 'antd'
+import { Avatar, Button, Dropdown, Form, Image, Input, List, Result, Skeleton, Upload } from 'antd'
 import {
   CloseOutlined,
   HomeFilled,
+  MoreOutlined,
   PaperClipOutlined,
   SendOutlined,
   SmileOutlined,
@@ -14,6 +15,7 @@ import { getBase64 } from '../../services/commonService'
 import Message from '../../components/Message'
 import { HubConnectionState } from '@microsoft/signalr'
 import { useSearchParams } from 'react-router-dom'
+import BreadcrumbLink from '../../components/BreadcrumbLink'
 
 const breadcrumbItems = [
   {
@@ -27,15 +29,18 @@ const breadcrumbItems = [
 
 export default function Chat() {
   // const [loading, setLoading] = useState(false)
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [form] = Form.useForm()
   const { chatConnection } = useChat()
 
   const inputRef = useRef(null)
   const contentRef = useRef(null)
 
-  const [messages, setMessages] = useState([])
-  const [currentConnection, setCurrentConnection] = useState(() => searchParams.get('connectionId'))
+  const [conversations, setConversations] = useState([])
+
+  const [loading, setLoading] = useState(false)
+  const [currentId, setCurrentId] = useState(() => searchParams.get('id'))
+  const [currentConversation, setCurrentConversation] = useState([])
 
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewImage, setPreviewImage] = useState('')
@@ -45,42 +50,49 @@ export default function Chat() {
     const getUserConnections = async () => {
       if (chatConnection && chatConnection?.state === HubConnectionState.Connected) {
         try {
-          const getMessage = await chatConnection.invoke('GetMessages')
-          setMessages(getMessage)
-          getMessage.length && setCurrentConnection(getMessage[0]?.connectionId)
-
-          chatConnection.on('USER_CONNECT', (newConnectionId) => {
-            setMessages((pre) => [...pre, { connectionId: newConnectionId, messages: [] }])
-            if (!currentConnection) setCurrentConnection(newConnectionId)
+          const res = await chatConnection.invoke('GetConversations')
+          setConversations(res)
+          if (currentId) {
+            await handleGetMessage(currentId)
+            setCurrentId(currentId)
+          } else if (res?.length) {
+            const firstId = res[0]
+            await handleGetMessage(firstId)
+            setCurrentId(firstId)
+          }
+          chatConnection.on('USER_START_CHAT', (id) => {
+            setConversations((pre) => pre.concat(id))
+            if (!currentId) setCurrentId(id)
           })
 
-          chatConnection.on('USER_DISCONNECT', (connectionId) => {
-            setMessages((pre) => {
-              return pre
-                .filter((item) => item.messages && item.messages.length)
-                .map((item) => {
-                  if (item.connectionId === connectionId) {
-                    return { ...item, close: true }
-                  }
-                  return item
-                })
-            })
-          })
+          // chatConnection.on('USER_DISCONNECT', (connectionId) => {
+          //   setMessages((pre) => {
+          //     return pre
+          //       .filter((item) => item.messages && item.messages.length)
+          //       .map((item) => {
+          //         if (item.connectionId === connectionId) {
+          //           return { ...item, close: true }
+          //         }
+          //         return item
+          //       })
+          //   })
+          // })
 
-          chatConnection.on('onAdmin', (connectionId, message) => {
+          chatConnection.on('onAdmin', (id, message) => {
             const mess = {
-              message: message,
+              content: message,
               isUser: true,
+              createAt: new Date(),
             }
-            setMessages((pre) => {
-              return pre.map((item) => {
-                const oldMessages = item.messages
-                if (connectionId === item.connectionId) {
-                  return { ...item, messages: [...oldMessages, mess] }
-                }
-                return item
-              })
-            })
+            if (currentId === id) {
+              setCurrentConversation((pre) => pre.concat(mess))
+            } else {
+              setConversations((pre) =>
+                pre.map((item) =>
+                  item.id === id ? { ...item, unread: (item?.unread ?? 0) + 1 } : item,
+                ),
+              )
+            }
           })
         } catch (err) {
           console.error(err.toString())
@@ -91,25 +103,25 @@ export default function Chat() {
     // eslint-disable-next-line
   }, [chatConnection])
 
-  const loadMoreData = () => {
-    // if (loading) {
-    //   return
-    // }
-    // setLoading(true)
-    // fetch('https://randomuser.me/api/?results=10&inc=name,gender,email,nat,picture&noinfo')
-    //   .then((res) => res.json())
-    //   .then((body) => {
-    //     // setData([...data, ...body.results])
-    //     setLoading(false)
-    //   })
-    //   .catch(() => {
-    //     setLoading(false)
-    //   })
-  }
+  // const loadMoreData = () => {
+  //   // if (loading) {
+  //   //   return
+  //   // }
+  //   // setLoading(true)
+  //   // fetch('https://randomuser.me/api/?results=10&inc=name,gender,email,nat,picture&noinfo')
+  //   //   .then((res) => res.json())
+  //   //   .then((body) => {
+  //   //     // setData([...data, ...body.results])
+  //   //     setLoading(false)
+  //   //   })
+  //   //   .catch(() => {
+  //   //     setLoading(false)
+  //   //   })
+  // }
 
-  useEffect(() => {
-    loadMoreData()
-  }, [])
+  // useEffect(() => {
+  //   loadMoreData()
+  // }, [])
 
   useEffect(() => {
     if (contentRef.current) {
@@ -118,10 +130,10 @@ export default function Chat() {
         cursor: 'start',
       })
     }
-    if (!currentConnection && messages.length) {
-      setCurrentConnection(messages[0]?.connectionId)
-    }
-  }, [messages, currentConnection])
+    // if (!currentConnection && messages.length) {
+    //   setCurrentConnection(messages[0]?.connectionId)
+    // }
+  }, [currentConversation])
 
   const handlePreview = async (file) => {
     if (!file.url && !file.preview) {
@@ -134,75 +146,117 @@ export default function Chat() {
 
   const handleChange = ({ fileList: newFileList }) => setFileList(newFileList)
 
-  const onClickUser = (connectionId) => setCurrentConnection(connectionId)
-
-  const handleSendMessage = (values) => {
-    if (currentConnection) {
-      const mess = { ...values, isUser: false }
-      const newMessage = messages.map((item) => {
-        const oldMessages = item.messages
-        if (currentConnection === item.connectionId) {
-          return { ...item, messages: [...oldMessages, mess] }
-        }
-        return item
-      })
-      setMessages(newMessage)
-      chatConnection.invoke('SendToUser', currentConnection, values.message)
-      form.resetFields()
+  const handleGetMessage = async (id) => {
+    if (chatConnection) {
+      setLoading(true)
+      setCurrentId(id)
+      setSearchParams({ id })
+      const res = await chatConnection.invoke('GetConversation', id)
+      const messages = res?.messages ?? []
+      setCurrentConversation(messages)
+      setLoading(false)
     }
   }
 
+  const handleSendMessage = async (values) => {
+    if (currentId) {
+      const mess = { ...values, isUser: false, createAt: new Date() }
+      setCurrentConversation((pre) => pre.concat(mess))
+      form.resetFields()
+      await chatConnection.invoke('SendToUser', currentId, values.content)
+    }
+  }
+
+  const handleCloseChat = async (session) => {
+    if (chatConnection) {
+      await chatConnection.invoke('CloseChat', session)
+      setConversations((pre) => {
+        const newList = pre.filter((id) => id !== session)
+
+        if (session === currentId) {
+          if (newList.length) {
+            const firstId = newList[0]
+            handleGetMessage(firstId)
+            setCurrentId(firstId)
+          }
+        }
+        return newList
+      })
+    }
+  }
+
+  const items = (session) => [
+    {
+      key: '1',
+      label: 'Xóa cuộc trò chuyện',
+      onClick: () => handleCloseChat(session),
+    },
+  ]
+
   return (
     <div className="pb-4">
-      <Breadcrumb className="py-2" items={breadcrumbItems} />
+      <BreadcrumbLink className="py-2" breadcrumbItems={breadcrumbItems} />
       <div className="p-2 bg-white rounded-lg drop-shadow min-h-content">
         <div className="grid grid-cols-4 gap-2 bg-white h-content">
-          {messages.length ? (
+          {conversations.length ? (
             <>
               <div className="overflow-auto border-r">
                 <List
-                  dataSource={messages}
-                  renderItem={(item, i) => (
+                  dataSource={conversations}
+                  renderItem={(id, i) => (
                     <List.Item
-                      key={item.connectionId}
-                      onClick={() => onClickUser(item.connectionId)}
-                      className={`cursor-pointer hover:bg-gray-100 ${
-                        currentConnection === item.connectionId && 'bg-gray-200'
+                      key={id}
+                      className={`relative cursor-pointer hover:bg-gray-100 ${
+                        currentId === id && 'bg-gray-200'
                       }`}
                     >
                       <List.Item.Meta
+                        onClick={() => currentId !== id && handleGetMessage(id)}
                         className="px-2"
                         avatar={
                           <Avatar src={`https://api.dicebear.com/7.x/miniavs/svg?seed=${i}`} />
                         }
                         title={
-                          // <div className="flex justify-center md:justify-start items-center gap-2">
-                          //   <Avatar>
-                          //     <UserOutlined />
-                          //   </Avatar>
-                          // </div>
-                          <span className="hidden md:block">Người dùng {i + 1}</span>
+                          <>
+                            <div className="hidden md:block">Người dùng {i + 1}</div>
+                            <div className="text-gray-500">{id}</div>
+                          </>
                         }
                       />
+                      <Dropdown trigger={['click']} menu={{ items: items(id) }}>
+                        <Button type="text" className="absolute top-1 right-0 px-2 mr-1">
+                          <MoreOutlined />
+                        </Button>
+                      </Dropdown>
                     </List.Item>
                   )}
                 />
               </div>
               <div className="col-span-3 flex flex-col max-h-content">
                 <div ref={contentRef} className="flex-1 overflow-y-auto">
-                  {currentConnection &&
-                    messages
-                      .find((e) => e.connectionId === currentConnection)
-                      ?.messages.map((e, i) => (
-                        <Message key={i} message={e.message} isUser={e.isUser} />
-                      ))}
+                  {loading ? (
+                    <>
+                      <Skeleton avatar active />
+                      <Skeleton avatar active />
+                      <Skeleton avatar active />
+                    </>
+                  ) : (
+                    currentConversation.map((e, i) => (
+                      <Message
+                        key={i}
+                        content={e.content}
+                        isUser={e.isUser}
+                        createAt={e.createAt}
+                      />
+                    ))
+                  )}
 
-                  {!messages.length ||
+                  {/* {!messages.length ||
                     !currentConnection ||
                     (!messages.find((e) => e.connectionId === currentConnection)?.messages
                       .length && (
                       <div className="flex justify-center">Người dùng chưa gửi tin nhắn</div>
-                    ))}
+                    ))} */}
                 </div>
 
                 <div>
@@ -222,19 +276,19 @@ export default function Chat() {
                       />
                     </div>
                   ))}
-                  {messages.find((e) => e.connectionId === currentConnection)?.close ? (
+                  {conversations.find((e) => e.id === currentId)?.close ? (
                     <div className="text-center text-lg">
-                      <WarningFilled className="text-yellow-500" /> Đoạn chat đã kết thúc
+                      <WarningFilled className="text-yellow-500" /> Người dùng đã đóng đoạn chat
                     </div>
                   ) : (
-                    currentConnection && (
+                    currentConversation && (
                       <Form
                         form={form}
                         variant="borderless"
                         className="flex gap-1"
                         onFinish={handleSendMessage}
                       >
-                        <Form.Item noStyle name="message" className="flex-1">
+                        <Form.Item noStyle name="content" className="flex-1">
                           <Input
                             allowClear
                             ref={inputRef}
@@ -242,9 +296,9 @@ export default function Chat() {
                             placeholder="Nhập tin nhắn, nhấn Enter để gửi..."
                           />
                         </Form.Item>
-                        <Form.Item noStyle dependencies={['message']}>
+                        <Form.Item noStyle dependencies={['content']}>
                           {({ getFieldValue }) => {
-                            const text = getFieldValue('message')?.trim()
+                            const text = getFieldValue('content')?.trim()
                             return (
                               <Button
                                 disabled={!text}
