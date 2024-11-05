@@ -59,3 +59,7 @@ table thead {
   user-select: none;
   white-space: nowrap;
 }
+
+.ant-list-item-meta-avatar {
+  margin: 0;
+}

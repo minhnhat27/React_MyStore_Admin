@@ -86,7 +86,7 @@ export default function Header({ collapsed, toggleCollapsed }) {
         })
         hasAdminEventRegistered = true
       } catch (err) {
-        console.error(err.toString())
+        console.error(err)
       }
     }
   }, [chatConnection, notification, pathname])
