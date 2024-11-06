@@ -127,6 +127,74 @@ export function base64toFile(dataurl, filename) {
   return new File([u8arr], filename, { type: mime })
 }
 
+export const compressImage = (file) =>
+  new Promise((resolve, reject) => {
+    const img = new Image()
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      img.src = e.target?.result
+    }
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+
+      const MAX_WIDTH = 480
+      const MAX_HEIGHT = 480
+      let width = img.width
+      let height = img.height
+
+      if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+        if (width / MAX_WIDTH > height / MAX_HEIGHT) {
+          height *= MAX_WIDTH / width
+          width = MAX_WIDTH
+        } else {
+          width *= MAX_HEIGHT / height
+          height = MAX_HEIGHT
+        }
+      }
+
+      canvas.width = width
+      canvas.height = height
+      ctx.drawImage(img, 0, 0, width, height)
+
+      let quality = 1
+      const MAX_SIZE = 24 * 1024
+
+      const checkSizeAndCompress = () => {
+        canvas.toBlob(
+          (blob) => {
+            if (blob && blob.size <= MAX_SIZE) {
+              const reader = new FileReader()
+              reader.onloadend = () => {
+                resolve(reader.result)
+              }
+              reader.readAsDataURL(blob)
+            } else if (quality > 0.1) {
+              quality -= 0.1
+              checkSizeAndCompress()
+            } else {
+              resolve(null)
+            }
+          },
+          'image/jpeg',
+          quality,
+        )
+      }
+      checkSizeAndCompress()
+
+      // canvas.toBlob(
+      //   (blob) => {
+      //     resolve(blob)
+      //   },
+      //   'image/jpeg',
+      //   0.5,
+      // )
+    }
+
+    reader.onerror = (error) => reject(error)
+    reader.readAsDataURL(file)
+  })
+
 export const getTimeHHmm = (value) => {
   const date = value ? new Date(value) : new Date()
 

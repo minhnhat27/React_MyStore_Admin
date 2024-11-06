@@ -31,7 +31,7 @@ const breadcrumbItems = [
     title: <HomeFilled />,
   },
   {
-    title: 'Mã giảm giá',
+    title: 'Quản lý mã giảm giá',
   },
 ]
 
@@ -39,6 +39,9 @@ const columns = (handleDeleteVoucher, onUpdateGlobal, onOpenUserVoucher) => [
   {
     title: 'Mã giảm giá',
     dataIndex: 'code',
+    fixed: 'left',
+    maxWidth: 100,
+    render: (value) => <div className="truncate w-24">{value}</div>,
   },
   {
     title: 'Số tiền giảm',
@@ -103,7 +106,7 @@ const columns = (handleDeleteVoucher, onUpdateGlobal, onOpenUserVoucher) => [
   },
 ]
 
-export default function Voucher() {
+export default function Vouchers() {
   const [form] = Form.useForm()
   const [openAddVoucher, setOpenAddVoucher] = useState(false)
   const [openUserVoucher, setOpenUserVoucher] = useState(false)
@@ -228,7 +231,7 @@ export default function Voucher() {
             columns={columns(handleDeleteVoucher, onUpdateGlobal, onOpenUserVoucher)}
             dataSource={voucher}
             rowKey={(record) => record.code}
-            className="overflow-x-auto"
+            className="overflow-x-auto overflow-y-hidden"
             rowHoverable
             pagination={false}
             loading={loading}
@@ -252,7 +255,7 @@ export default function Voucher() {
             initialValues={{
               discountType: 0,
             }}
-            onFinish={(values) => onCreate(values)}
+            onFinish={onCreate}
           >
             {dom}
           </Form>

@@ -43,3 +43,13 @@ export const ConfirmedStatus = 1
 
 export const CancelStatus = 6
 export const ReceivedStatus = 5
+
+export const OrderStatusTagColor = {
+  0: '#eab308',
+  1: '#3b82f6',
+  2: '#14b8a6',
+  3: '#a855f7',
+  4: '#f97316',
+  5: '#22c55e',
+  6: '#f43f5e', //"#ef4444"
+}

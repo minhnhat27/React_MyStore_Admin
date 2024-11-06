@@ -279,15 +279,7 @@ export default function ProductDetail() {
               name="name"
               rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm' }]}
             >
-              <Input
-                count={{
-                  show: true,
-                  max: 50,
-                }}
-                maxLength={50}
-                size="large"
-                placeholder="Abc..."
-              />
+              <Input showCount maxLength={150} size="large" placeholder="Abc..." />
             </Form.Item>
             <div className="grid gap-2 md:grid-cols-3">
               <Form.Item
@@ -374,9 +366,9 @@ export default function ProductDetail() {
               <TextArea
                 id="description"
                 autoSize={{ minRows: 6 }}
-                count={{ show: true, max: 500 }}
+                showCount
                 placeholder="Áo đẹp..."
-                maxLength={500}
+                maxLength={5000}
               />
             </Form.Item>
           </Card>
@@ -528,8 +520,8 @@ export default function ProductDetail() {
                   {colors.map((color, j) => {
                     if (color && color.colorName !== '') {
                       return (
-                        <Flex key={j} align="center" gap={8} className="mb-2">
-                          <div className="w-24 truncate border rounded-md px-2 py-1 text-center">
+                        <div key={j} className="mb-2 grid grid-cols-2 gap-2">
+                          <div className="truncate border rounded-md px-2 py-1 text-center">
                             {color?.colorName}
                           </div>
                           <InputNumber
@@ -554,7 +546,7 @@ export default function ProductDetail() {
                             }}
                             placeholder="Số lượng kho..."
                           />
-                        </Flex>
+                        </div>
                       )
                     }
                     return null

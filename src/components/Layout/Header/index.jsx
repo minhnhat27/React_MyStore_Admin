@@ -15,8 +15,6 @@ import {
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { HubConnectionState } from '@microsoft/signalr'
 
-let hasAdminEventRegistered = false
-
 export default function Header({ collapsed, toggleCollapsed }) {
   const { state, dispatch } = useAuth()
   const { chatConnection } = useChat()
@@ -29,6 +27,8 @@ export default function Header({ collapsed, toggleCollapsed }) {
   const [darkMode, setDarkMode] = useState(false)
 
   const [count, setCount] = useState(0)
+
+  const [hasRegistered, setHasRegistered] = useState(false)
 
   const handleOk = () => {
     authService.logout()
@@ -50,29 +50,21 @@ export default function Header({ collapsed, toggleCollapsed }) {
   }, [])
 
   useEffect(() => {
-    if (
-      chatConnection &&
-      chatConnection.state === HubConnectionState.Connected &&
-      !hasAdminEventRegistered
-    ) {
+    if (chatConnection && chatConnection.state === HubConnectionState.Connected && !hasRegistered) {
       try {
         chatConnection.on('onAdmin', (connectionId, message) => {
           setPathname((pre) => {
             if (pre !== '/message') {
               const key = `open${Date.now()}`
               notification.info({
-                message: (
-                  <>
-                    <span className="font-semibold">Message: </span>
-                    {message}
-                  </>
-                ),
+                message: <div className="font-semibold">Có tin nhắn mới</div>,
+                description: message,
                 btn: (
                   <Link
                     onClick={() => notification.destroy(key)}
                     to={`/message?connectionId=${connectionId}`}
                   >
-                    <Button size="small" type="link">
+                    <Button size="small" type="link" className="p-0">
                       Xem ngay
                     </Button>
                   </Link>
@@ -84,12 +76,33 @@ export default function Header({ collapsed, toggleCollapsed }) {
             return pre
           })
         })
-        hasAdminEventRegistered = true
+        setHasRegistered(true)
       } catch (err) {
         console.error(err)
       }
     }
-  }, [chatConnection, notification, pathname])
+  }, [chatConnection, notification, pathname, hasRegistered])
+
+  useEffect(() => {
+    if (pathname === '/message') {
+      setCount(0)
+    }
+  }, [pathname])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (chatConnection && chatConnection.state === HubConnectionState.Connected) {
+          const totalUnread = await chatConnection.invoke('TotalUnread')
+          setCount(totalUnread)
+        }
+      } catch (error) {
+        console.log(error)
+        setCount(0)
+      }
+    }
+    fetchData()
+  }, [chatConnection])
 
   useEffect(() => {
     if (darkMode) {

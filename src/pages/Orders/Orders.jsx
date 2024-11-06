@@ -25,14 +25,16 @@ import {
   Table,
   Tabs,
   Tag,
+  Tooltip,
 } from 'antd'
-import { CompassOutlined, HomeFilled } from '@ant-design/icons'
+import { CompassOutlined, EyeTwoTone, HomeFilled } from '@ant-design/icons'
 import httpService from '../../services/http-service'
 import {
   CancelStatus,
   ConfirmedStatus,
   ORDER_API,
   OrderStatus,
+  OrderStatusTagColor,
   ProcessingStatus,
   ReceivedStatus,
   RequiredNote,
@@ -44,7 +46,7 @@ const breadcrumbItems = [
     title: <HomeFilled />,
   },
   {
-    title: 'Đơn hàng',
+    title: 'Quản lý đơn hàng',
   },
 ]
 
@@ -101,7 +103,8 @@ const columns = (
   {
     title: 'Trạng thái',
     dataIndex: 'orderStatus',
-    render: (value) => <Tag color="#22c55e">{OrderStatus[value]}</Tag>,
+    align: 'center',
+    render: (value) => <Tag color={OrderStatusTagColor[value]}>{OrderStatus[value]}</Tag>,
     // filters: orderStatus,
     // onFilter: (value, record) => record.orderStatus === value,
   },
@@ -125,16 +128,18 @@ const columns = (
               </>
             }
             loading={loading}
-            onConfirm={() => nextOrderStatus(value)}
+            onConfirm={() => nextOrderStatus(value, record.orderStatus)}
           >
             <Button className="m-1" type="primary" danger>
               Duyệt
             </Button>
           </Popconfirm>
         )}
-        <Button onClick={() => openOrderDetails(value)} className="m-1">
-          Chi tiết
-        </Button>
+        <Tooltip title="Xem chi tiết">
+          <Button onClick={() => openOrderDetails(value)} className="m-1">
+            <EyeTwoTone />
+          </Button>
+        </Tooltip>
       </>
     ),
   },
@@ -259,10 +264,11 @@ export default function Orders() {
     }
   }
 
-  const nextOrderStatus = async (id) => {
+  const nextOrderStatus = async (id, currentStatus) => {
     try {
       setLoading(true)
-      await httpService.put(ORDER_API + `/next-status/${id}`)
+      const data = { currentStatus }
+      await httpService.put(ORDER_API + `/next-status/${id}`, data)
       setOrders((pre) => pre.filter((e) => e.id !== id))
     } catch (error) {
       message.error(showError(error))
@@ -478,7 +484,10 @@ export default function Orders() {
         footer={
           orderDetails && (
             <>
-              <div className="py-1">Ngày đặt hàng: {formatDateTime(orderDetails.orderDate)}</div>
+              <div className="py-1">
+                Thời gian đặt hàng: {formatDateTime(orderDetails.orderDate)}
+              </div>
+              <div>Giảm giá: {formatVND.format(orderDetails.voucherDiscount)}</div>
               <div>Phí vận chuyển: {formatVND.format(orderDetails.shippingCost)}</div>
               <div>
                 Tổng cộng:{' '}
@@ -518,11 +527,9 @@ export default function Orders() {
                     description={
                       <>
                         <div>
-                          {item.quantity} x {formatVND.format(item.price)}
+                          {item.quantity} x {formatVND.format(item.originPrice)}
                         </div>
-                        <div className="text-gray-500 font-semibold">
-                          Phân loại: {item.colorName} - {item.sizeName}
-                        </div>
+                        <div className="text-gray-500 font-semibold">Phân loại: {item.variant}</div>
                       </>
                     }
                   />

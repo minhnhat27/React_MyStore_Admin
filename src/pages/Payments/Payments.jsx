@@ -18,6 +18,7 @@ import { useEffect } from 'react'
 import { showError } from '../../services/commonService'
 import httpService from '../../services/http-service'
 import { PAYMENT_API } from '../../services/const'
+import BreadcrumbLink from '../../components/BreadcrumbLink'
 
 const breadcrumbItems = [
   {
@@ -25,10 +26,7 @@ const breadcrumbItems = [
     title: <HomeFilled />,
   },
   {
-    title: 'Thuộc tính sản phẩm',
-  },
-  {
-    title: 'Danh mục',
+    title: 'Phương thức thanh toán',
   },
 ]
 
@@ -137,7 +135,7 @@ export default function Payments() {
   return (
     <>
       <div className="pb-4">
-        <Breadcrumb className="py-2" items={breadcrumbItems} />
+        <BreadcrumbLink className="py-2" breadcrumbItems={breadcrumbItems} />
         <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
           <Card className="md:col-span-2 drop-shadow">
             <Table

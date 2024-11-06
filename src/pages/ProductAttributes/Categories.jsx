@@ -4,7 +4,7 @@ import { DeleteOutlined, EditTwoTone, HomeFilled } from '@ant-design/icons'
 import { useEffect } from 'react'
 import { showError } from '../../services/commonService'
 import httpService from '../../services/http-service'
-import { CATEGORY_API, MATERIAL_API } from '../../services/const'
+import { CATEGORY_API } from '../../services/const'
 
 const breadcrumbItems = [
   {
@@ -60,7 +60,7 @@ export default function Category() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const data = await httpService.get(MATERIAL_API)
+        const data = await httpService.get(CATEGORY_API)
         setCategories(data)
       } catch (error) {
         message.error(showError(error))

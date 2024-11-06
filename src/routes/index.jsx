@@ -10,6 +10,7 @@ import {
   DeploymentUnitOutlined,
   MessageFilled,
   GiftOutlined,
+  FireOutlined,
 } from '@ant-design/icons'
 
 import DefaultLayout from '../components/Layout/DefaultLayout'
@@ -17,7 +18,7 @@ import NotFound from '../components/NotFound'
 import Home from '../pages/Home'
 import Login from '../pages/Login'
 import Products from '../pages/Products'
-import Orders from '../pages/Orders/Orders'
+import Orders from '../pages/Orders'
 import AddProduct from '../pages/Products/AddProduct'
 import OrderDetail from '../pages/Orders/OrderDetail'
 import Brand from '../pages/ProductAttributes/Brands'
@@ -28,12 +29,14 @@ import Users from '../pages/Users'
 import Message from '../pages/Chat'
 import Sizes from '../pages/ProductAttributes/Sizes'
 import Payments from '../pages/Payments'
-import Voucher from '../pages/Voucher'
+import Vouchers from '../pages/Vouchers'
+import Campaigns from '../pages/Campaigns'
 
 export const navigateItems = [
   { key: '/home', icon: <PieChartOutlined />, label: 'Trang chủ' },
   { key: '/orders-management', icon: <ContainerOutlined />, label: 'Đơn hàng' },
   { key: '/products-management', icon: <ProductOutlined />, label: 'Sản phẩm' },
+  { key: '/previews-management', icon: <FireOutlined />, label: 'Chiến dịch' },
   { key: '/vouchers-management', icon: <GiftOutlined />, label: 'Mã giảm giá' },
   {
     key: '/message',
@@ -71,7 +74,8 @@ export const privateRoutes = [
   { path: '/products-management/add-product', component: AddProduct },
 
   { path: '/users-management', component: Users },
-  { path: '/vouchers-management', component: Voucher },
+  { path: '/vouchers-management', component: Vouchers },
+  { path: '/previews-management', component: Campaigns },
 
   { path: '/orders-management', component: Orders },
   { path: '/orders-management/order-detail/:id', component: OrderDetail },

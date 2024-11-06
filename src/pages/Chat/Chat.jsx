@@ -26,7 +26,7 @@ import {
   SmileOutlined,
   WarningFilled,
 } from '@ant-design/icons'
-import { getBase64 } from '../../services/commonService'
+import { compressImage, getBase64 } from '../../services/commonService'
 import Message from '../../components/Message'
 import { HubConnectionState } from '@microsoft/signalr'
 import { useSearchParams } from 'react-router-dom'
@@ -143,8 +143,10 @@ export default function Chat() {
   }, [currentConversation])
 
   useEffect(() => {
-    if (currentId) setSearchParams({ id: currentId })
-    else setSearchParams({})
+    if (currentId) {
+      setSearchParams({ id: currentId })
+      setFileList([])
+    } else setSearchParams({})
   }, [currentId, setSearchParams])
 
   const handlePreview = async (file) => {
@@ -161,7 +163,7 @@ export default function Chat() {
   const handleGetMessage = async (id, setId = true) => {
     if (chatConnection) {
       setLoading(true)
-
+      form.resetFields()
       const res = await chatConnection.invoke('GetConversation', id)
       const messages = res?.messages ?? []
       if (setId) {
@@ -173,52 +175,6 @@ export default function Chat() {
       setCurrentConversation(messages)
       setLoading(false)
     }
-  }
-
-  const compressImage = (file) => {
-    return new Promise((resolve) => {
-      const img = new Image()
-      const reader = new FileReader()
-
-      reader.onload = (e) => {
-        img.src = e.target?.result
-      }
-
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        const ctx = canvas.getContext('2d')
-
-        const MAX_WIDTH = 720
-        const MAX_HEIGHT = 720
-        let width = img.width
-        let height = img.height
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width
-            width = MAX_WIDTH
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height
-            height = MAX_HEIGHT
-          }
-        }
-
-        canvas.width = width
-        canvas.height = height
-        ctx.drawImage(img, 0, 0, width, height)
-        canvas.toBlob(
-          (blob) => {
-            resolve(blob)
-          },
-          'image/jpeg',
-          0.3,
-        )
-      }
-
-      reader.readAsDataURL(file)
-    })
   }
 
   const beforeUpload = async (file) => {
@@ -237,16 +193,24 @@ export default function Chat() {
   }
 
   const handleSendMessage = async (values) => {
-    if (currentId) {
-      const image = fileList.length
-        ? await getBase64(await compressImage(fileList[0].originFileObj))
-        : null
+    try {
+      if (currentId) {
+        let image = null
+        if (fileList.length) {
+          image = await compressImage(fileList[0].originFileObj)
+          if (!image) message.error('Ảnh quá lớn không thể gửi ảnh')
+        }
 
-      const mess = { ...values, isUser: false, createAt: new Date().toISOString(), image }
-      setCurrentConversation((pre) => [...pre, mess])
-      form.resetFields()
-      setFileList([])
-      await chatConnection.invoke('SendToUser', currentId, values.content, image)
+        const mess = { ...values, isUser: false, createAt: new Date().toISOString(), image }
+        form.resetFields()
+        setFileList([])
+
+        await chatConnection.invoke('SendToUser', currentId, values.content, image)
+        setCurrentConversation((pre) => [...pre, mess])
+      }
+    } catch (error) {
+      console.log(error)
+      message.error('Có lỗi xảy ra. Không thể gửi tin nhắn!')
     }
   }
 
@@ -305,20 +269,20 @@ export default function Chat() {
                       dataSource={conversations}
                       renderItem={(item, i) => (
                         <List.Item
+                          onClick={() => currentId !== item.id && handleGetMessage(item.id)}
                           key={i}
-                          className={`cursor-pointer ${
-                            currentId === item.id ? 'bg-red-200' : 'hover:bg-gray-100'
+                          className={`cursor-pointer mb-1 rounded ${
+                            currentId === item.id ? 'bg-red-300' : 'hover:bg-red-100'
                           }`}
-                          extra={
+                          actions={[
                             <Dropdown trigger={['click']} menu={{ items: items(item.id) }}>
-                              <Button type="text" className="px-1 right-0">
+                              <Button type="text" className="px-2">
                                 <MoreOutlined />
                               </Button>
-                            </Dropdown>
-                          }
+                            </Dropdown>,
+                          ]}
                         >
                           <List.Item.Meta
-                            onClick={() => currentId !== item.id && handleGetMessage(item.id)}
                             className="md:px-2"
                             avatar={
                               !item.closed ? (
@@ -337,9 +301,13 @@ export default function Chat() {
                             }
                             title={
                               item.closed ? (
-                                <div className="text-xs italic px-2">Đoạn chat đã kết thúc</div>
+                                <div className="text-xs italic px-2 text-gray-800">
+                                  Đoạn chat đã kết thúc
+                                </div>
                               ) : (
-                                <div className="hidden sm:block truncate">Người dùng {i + 1}</div>
+                                <div className="hidden sm:block truncate text-gray-800">
+                                  Người dùng {i + 1}
+                                </div>
                               )
                             }
                           />
