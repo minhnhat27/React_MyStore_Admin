@@ -30,13 +30,13 @@ import Message from '../pages/Chat'
 import Sizes from '../pages/ProductAttributes/Sizes'
 import Payments from '../pages/Payments'
 import Vouchers from '../pages/Vouchers'
-import Campaigns from '../pages/Campaigns'
+import FlashSales from '../pages/FlashSales'
 
 export const navigateItems = [
   { key: '/home', icon: <PieChartOutlined />, label: 'Trang chủ' },
   { key: '/orders-management', icon: <ContainerOutlined />, label: 'Đơn hàng' },
   { key: '/products-management', icon: <ProductOutlined />, label: 'Sản phẩm' },
-  { key: '/previews-management', icon: <FireOutlined />, label: 'Chiến dịch' },
+  { key: '/previews-management', icon: <FireOutlined />, label: 'Chiến dịch giảm giá' },
   { key: '/vouchers-management', icon: <GiftOutlined />, label: 'Mã giảm giá' },
   {
     key: '/message',
@@ -75,7 +75,7 @@ export const privateRoutes = [
 
   { path: '/users-management', component: Users },
   { path: '/vouchers-management', component: Vouchers },
-  { path: '/previews-management', component: Campaigns },
+  { path: '/previews-management', component: FlashSales },
 
   { path: '/orders-management', component: Orders },
   { path: '/orders-management/order-detail/:id', component: OrderDetail },

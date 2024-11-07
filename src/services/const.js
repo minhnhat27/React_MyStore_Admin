@@ -15,6 +15,7 @@ export const PAYMENT_API = base + '/payments'
 export const ORDER_API = base + '/orders'
 export const ACCOUNT_API = base + '/account'
 export const STATISTICS_API = base + '/statistics'
+export const FLASHSALES_API = base + '/flashsales'
 
 export const Gender = {
   0: 'Nam',
