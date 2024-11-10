@@ -37,6 +37,7 @@ export const OrderStatus = {
   4: 'Đang giao hàng',
   5: 'Đã nhận hàng',
   6: 'Đã hủy',
+  7: 'Tất cả',
 }
 
 export const ProcessingStatus = 0

@@ -26,7 +26,7 @@ import {
   SmileOutlined,
   WarningFilled,
 } from '@ant-design/icons'
-import { compressImage, getBase64 } from '../../services/commonService'
+import { compressImage, formatDate, getBase64 } from '../../services/commonService'
 import Message from '../../components/Message'
 import { HubConnectionState } from '@microsoft/signalr'
 import { useSearchParams } from 'react-router-dom'
@@ -137,9 +137,6 @@ export default function Chat() {
         cursor: 'start',
       })
     }
-    // if (!currentId) {
-    //   setCurrentId(conversations[0]?.id)
-    // }
   }, [currentConversation])
 
   useEffect(() => {
@@ -238,7 +235,7 @@ export default function Chat() {
       return {}
     }
     return currentConversation.reduce((pre, message) => {
-      const dateKey = message.createAt ? message.createAt.split('T')[0] : 'unknown_date'
+      const dateKey = message.createAt ? formatDate(message.createAt) : 'unknown_date'
       if (!pre[dateKey]) {
         pre[dateKey] = []
       }
@@ -272,7 +269,7 @@ export default function Chat() {
                           onClick={() => currentId !== item.id && handleGetMessage(item.id)}
                           key={i}
                           className={`cursor-pointer mb-1 rounded ${
-                            currentId === item.id ? 'bg-red-300' : 'hover:bg-red-100'
+                            currentId === item.id ? 'bg-green-300' : 'hover:bg-green-100'
                           }`}
                           actions={[
                             <Dropdown trigger={['click']} menu={{ items: items(item.id) }}>
@@ -328,7 +325,7 @@ export default function Chat() {
                       ) : (
                         Object.keys(groupMessagesByDate).map((date, i) => (
                           <div key={i}>
-                            <Divider plain className="italic" style={{ fontSize: 12 }}>
+                            <Divider plain style={{ fontSize: 12 }}>
                               {date}
                             </Divider>
                             {groupMessagesByDate[date]?.map((e, i) => (

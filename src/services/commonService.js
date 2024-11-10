@@ -1,3 +1,5 @@
+import dayjs from 'dayjs'
+
 const API_URL = process.env.REACT_APP_API_URL
 
 export const debounce = (func, delay) => {
@@ -30,17 +32,7 @@ export const isEmptyObject = (obj) => {
 
 // export const formatDate = (isoDateStr) => new Date(isoDateStr).toLocaleString('en-GB')
 
-export const formatDate = (value) => {
-  const date = new Date(value)
-
-  return date
-    .toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    })
-    .replaceAll('/', '-')
-}
+export const formatDate = (value) => dayjs(value).format('DD-MM-YYYY')
 
 export const formatDateTime = (value) => {
   const date = new Date(value)

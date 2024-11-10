@@ -48,17 +48,6 @@ const breadcrumbItems = [
   },
 ]
 
-// const ReviewFilters = {
-//   0: 'Tất cả',
-//   1: '1 Sao',
-//   2: '2 Sao',
-//   3: '3 Sao',
-//   4: '4 Sao',
-//   5: '5 Sao',
-//   6: 'Có bình luận',
-//   7: 'Có hình ảnh',
-// }
-
 const ReviewFilters = [
   { value: 0, label: 'Tất cả' },
   { value: 1, label: '1 Sao' },
@@ -211,7 +200,7 @@ const columns = (
 ]
 
 export default function Products() {
-  const { message, notification } = App.useApp()
+  const { message } = App.useApp()
   const [products, setProducts] = useState([])
 
   const [reviewLoading, setReviewLoading] = useState(false)
@@ -252,14 +241,14 @@ export default function Products() {
         setTotalItems(data?.totalItems)
       } catch (error) {
         setSearchKey('')
-        notification.error({ message: 'Thất bại', description: showError(error) })
+        message.error(showError(error))
       } finally {
         setLoading(false)
         setSearchLoading(false)
       }
     }
     fetchData()
-  }, [page, pageSize, searchKey, notification])
+  }, [page, pageSize, searchKey, message])
 
   const handleChangeEnable = async (id, value) => {
     try {
@@ -466,7 +455,7 @@ export default function Products() {
             />
           </>
         }
-        styles={{ body: { height: '70vh', overflowY: 'auto' } }}
+        styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
         onOk={onClosereview}
         onCancel={onClosereview}
         okText="Đóng"

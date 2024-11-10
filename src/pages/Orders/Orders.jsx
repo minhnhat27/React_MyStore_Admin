@@ -1,4 +1,3 @@
-import { useSearchParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import {
   formatDate,
@@ -181,25 +180,19 @@ export default function Orders() {
   const [orders, setOrders] = useState([])
   const [orderDetails, setOrderDetails] = useState()
 
-  const [searchParams, setSearchParams] = useSearchParams()
-
   const [orderId, setOrderId] = useState()
   const [loading, setLoading] = useState(false)
   const [sendOrderLoading, setSendOrderLoading] = useState(false)
   const [orderLoading, setOrderLoading] = useState(false)
 
   const [searchLoading, setSearchLoading] = useState(false)
-  const [searchKey, setSearchKey] = useState(() => searchParams.get('key') || '')
+  const [searchKey, setSearchKey] = useState()
 
   const [totalItems, setTotalItems] = useState(0)
-  const [page, setPage] = useState(() =>
-    searchParams.get('page') ? parseInt(searchParams.get('page')) : 1,
-  )
-  const [pageSize, setPageSize] = useState(() =>
-    searchParams.get('pageSize') ? parseInt(searchParams.get('pageSize')) : 10,
-  )
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [paymentMethods, setPaymentMethods] = useState([])
-  const [orderStatus, setOrderStatus] = useState(() => searchParams.get('orderStatus') || '0')
+  const [orderStatus, setOrderStatus] = useState('0')
   const [openDrawer, setOpenDrawer] = useState(false)
 
   useEffect(() => {
@@ -207,14 +200,13 @@ export default function Orders() {
       setLoading(true)
       try {
         if (searchKey) setSearchLoading(true)
-        const params = { page, pageSize, key: searchKey }
-        setSearchParams({ ...params, orderStatus: orderStatus })
-        let data
-        if (orderStatus === 'all') {
-          data = await httpService.getWithParams(ORDER_API + '/all', params)
-        } else {
-          data = await httpService.getWithParams(ORDER_API + `/status/${orderStatus}`, params)
-        }
+
+        const params =
+          orderStatus === '7'
+            ? { page, pageSize, key: searchKey }
+            : { page, pageSize, key: searchKey, orderStatus }
+
+        const data = await httpService.getWithParams(ORDER_API + '/all', params)
 
         var newPaymentMethod = [
           ...new Set(data?.items?.map((order) => order.paymentMethodName)),
@@ -230,14 +222,14 @@ export default function Orders() {
         setTotalItems(data?.totalItems)
       } catch (error) {
         setSearchKey('')
-        notification.error({ message: 'Thất bại', description: showError(error) })
+        message.error(showError(error))
       } finally {
         setLoading(false)
         setSearchLoading(false)
       }
     }
     fetchData()
-  }, [page, pageSize, searchKey, orderStatus, notification, setSearchParams])
+  }, [page, pageSize, searchKey, orderStatus, message])
 
   const handleSearch = (key) => key && key !== searchKey && setSearchKey(key)
 
@@ -315,6 +307,66 @@ export default function Orders() {
 
   return (
     <>
+      <div className="pb-4">
+        <Breadcrumb className="py-2" items={breadcrumbItems} />
+        <div className="py-2 px-4 space-y-2 bg-white rounded-lg drop-shadow">
+          <div className="flex space-x-2 py-4">
+            <Input.Search
+              size="large"
+              allowClear
+              placeholder="Mã đơn hàng, phương thức,..."
+              loading={searchLoading}
+              onSearch={(key) => handleSearch(key)}
+              onChange={(e) => e.target.value === '' && setSearchKey('')}
+            />
+            <Button size="large" type="primary">
+              Xuất đơn hàng
+            </Button>
+          </div>
+          <Tabs
+            tabBarStyle={{ margin: 0 }}
+            onChange={onChange}
+            className="w-full"
+            items={Object.entries(OrderStatus).map(([key, value]) => ({
+              label: value,
+              key: key,
+            }))}
+            activeKey={orderStatus}
+          />
+          <Table
+            columns={columns(
+              loading,
+              paymentMethods,
+              openOrderDetails,
+              nextOrderStatus,
+              cancelOrder,
+              onOpenSendOrder,
+            )}
+            dataSource={orders}
+            rowKey={(record) => record.id}
+            className="overflow-x-auto"
+            rowHoverable
+            pagination={false}
+            loading={loading}
+          />
+
+          <Pagination
+            hideOnSinglePage
+            className="py-4"
+            align="center"
+            total={totalItems}
+            showTotal={(total, range) => `${range[0]}-${range[1]} của ${total} đơn hàng`}
+            defaultPageSize={pageSize}
+            defaultCurrent={page}
+            showSizeChanger
+            onChange={(newPage, newPageSize) => {
+              setPage(newPage)
+              setPageSize(newPageSize)
+            }}
+          />
+        </div>
+      </div>
+
       <Modal
         open={sendOrderOpen}
         title="Quy cách đóng gói (Đơn vị vận chuyển: Giao hàng nhanh)"
@@ -410,71 +462,6 @@ export default function Orders() {
         </div>
       </Modal>
 
-      <div className="pb-4">
-        <Breadcrumb className="py-2" items={breadcrumbItems} />
-        <div className="py-2 px-4 space-y-2 bg-white rounded-lg drop-shadow">
-          <div className="flex space-x-2 py-4">
-            <Input.Search
-              size="large"
-              allowClear
-              placeholder="Mã đơn hàng, phương thức,..."
-              loading={searchLoading}
-              onSearch={(key) => handleSearch(key)}
-              onChange={(e) => e.target.value === '' && setSearchKey('')}
-            />
-            <Button size="large" type="primary">
-              Xuất đơn hàng
-            </Button>
-          </div>
-
-          <Tabs
-            onChange={onChange}
-            type="card"
-            className="w-full"
-            items={Object.entries({ all: 'Tất cả', ...OrderStatus }).map(([key, value]) => {
-              return {
-                label: value,
-                key: key,
-                children: (
-                  <Table
-                    columns={columns(
-                      loading,
-                      paymentMethods,
-                      openOrderDetails,
-                      nextOrderStatus,
-                      cancelOrder,
-                      onOpenSendOrder,
-                    )}
-                    dataSource={orders}
-                    rowKey={(record) => record.id}
-                    className="overflow-x-auto"
-                    rowHoverable
-                    pagination={false}
-                    loading={loading}
-                  />
-                ),
-              }
-            })}
-            activeKey={orderStatus}
-          />
-
-          <Pagination
-            hideOnSinglePage
-            className="py-4"
-            align="center"
-            total={totalItems}
-            showTotal={(total, range) => `${range[0]}-${range[1]} của ${total} đơn hàng`}
-            defaultPageSize={pageSize}
-            defaultCurrent={page}
-            showSizeChanger
-            onChange={(newPage, newPageSize) => {
-              setPage(newPage)
-              setPageSize(newPageSize)
-            }}
-          />
-        </div>
-      </div>
-
       <Drawer
         open={openDrawer}
         destroyOnClose
@@ -517,7 +504,7 @@ export default function Orders() {
                     avatar={
                       <Image
                         width={80}
-                        height={80}
+                        height={100}
                         alt={item.productName}
                         className="object-cover"
                         src={toImageSrc(item.imageUrl)}
@@ -527,8 +514,12 @@ export default function Orders() {
                     description={
                       <>
                         <div>
-                          {item.quantity} x {formatVND.format(item.originPrice)}
+                          {item.quantity} x {formatVND.format(item.price)}{' '}
+                          <span className="line-through text-xs">
+                            {formatVND.format(item.originPrice)}
+                          </span>
                         </div>
+                        <div>Thành tiền: {formatVND.format(item.price * item.quantity)}</div>
                         <div className="text-gray-500 font-semibold">Phân loại: {item.variant}</div>
                       </>
                     }

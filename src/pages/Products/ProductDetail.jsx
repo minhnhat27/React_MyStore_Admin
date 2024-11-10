@@ -120,12 +120,13 @@ export default function ProductDetail() {
         }))
         setFileList(files)
       } catch (error) {
+        message.error(showError(error))
       } finally {
         setLoading(false)
       }
     }
     fetchData()
-  }, [id, form])
+  }, [id, form, message])
 
   const handleChangeColorFile = ({ fileList: newFileList }, key) => {
     const colors = [...colorImages]
@@ -210,7 +211,7 @@ export default function ProductDetail() {
 
   const updateProduct = async (values) => {
     try {
-      // setUpdateLoading(true)
+      setUpdateLoading(true)
       const formData = new FormData()
 
       fileList.forEach((item, i) =>
@@ -233,10 +234,12 @@ export default function ProductDetail() {
 
       sizeListValue.forEach((color, index) => {
         formData.append(`colorSizes[${index}].colorName`, color.colorName)
+        formData.append(`colorSizes[${index}].id`, color.id)
 
-        colors[index]?.image[0]?.originFileObj
-          ? formData.append(`colorSizes[${index}].image`, colors[index]?.image[0]?.originFileObj)
-          : formData.append(`colorSizes[${index}].id`, color.id)
+        if (colors[index]?.image[0]?.originFileObj) {
+          formData.append(`colorSizes[${index}].image`, colors[index]?.image[0]?.originFileObj)
+          if (!color.id) formData.delete(`colorSizes[${index}].id`)
+        }
 
         color.sizeInStocks.forEach((size, sizeIndex) => {
           formData.append(`colorSizes[${index}].sizeInStocks[${sizeIndex}].sizeId`, size.sizeId)
@@ -353,7 +356,7 @@ export default function ProductDetail() {
                 <InputNumber
                   size="large"
                   min={0}
-                  max={100}
+                  max={90}
                   className="w-full"
                   formatter={(value) => `${value}%`}
                   parser={(value) => value?.replace('%', '')}
@@ -509,7 +512,8 @@ export default function ProductDetail() {
                 mode="multiple"
                 disabled={
                   colors.length <= 0 ||
-                  colors.some((color) => color === undefined || !color?.colorName)
+                  colors.some((color) => color === undefined || !color?.colorName) ||
+                  updateLoading
                 }
               />
             </Form.Item>

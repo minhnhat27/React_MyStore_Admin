@@ -52,18 +52,20 @@ export default function Header({ collapsed, toggleCollapsed }) {
   useEffect(() => {
     if (chatConnection && chatConnection.state === HubConnectionState.Connected && !hasRegistered) {
       try {
-        chatConnection.on('onAdmin', (connectionId, message) => {
+        chatConnection.on('onAdmin', (id, message, image) => {
           setPathname((pre) => {
             if (pre !== '/message') {
               const key = `open${Date.now()}`
               notification.info({
                 message: <div className="font-semibold">Có tin nhắn mới</div>,
-                description: message,
+                description: (
+                  <>
+                    <div>{message}</div>
+                    {image && <div>kèm hình ảnh</div>}
+                  </>
+                ),
                 btn: (
-                  <Link
-                    onClick={() => notification.destroy(key)}
-                    to={`/message?connectionId=${connectionId}`}
-                  >
+                  <Link onClick={() => notification.destroy(key)} to={`/message?id=${id}`}>
                     <Button size="small" type="link" className="p-0">
                       Xem ngay
                     </Button>

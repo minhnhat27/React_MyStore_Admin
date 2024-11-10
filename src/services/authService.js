@@ -1,41 +1,28 @@
-import axios from 'axios'
 import Cookies from 'js-cookie'
+import httpService from './http-service'
 
 const API_URL = process.env.REACT_APP_API_URL + '/api/auth'
 
 const login = async (data) =>
-  await axios.post(API_URL + '/login', data).then((res) => {
-    const expires = 12 * 60 * 60 * 1000
-    const in12Hour = new Date(new Date().getTime() + expires)
-    Cookies.set('nstore_data', JSON.stringify(res.data), { expires: in12Hour })
-    return res
+  await httpService.post(API_URL + '/login', data).then((data) => {
+    if (!data.isAdmin) {
+      throw new Error('Không có quyền truy cập!')
+    }
+    const expires = new Date(data.expires)
+    Cookies.set('voa_store_management', JSON.stringify(data), { expires })
+    return data
   })
 
-const sendCode = async (data) => await axios.post(API_URL + '/send-code', data)
-
-const register = async (data) => await axios.post(API_URL + '/register', data)
-
-const logout = () => Cookies.remove('nstore_data')
+const logout = () => Cookies.remove('voa_store_management')
 
 const getCurrentUser = () => {
-  const user = Cookies.get('nstore_data')
+  const user = Cookies.get('voa_store_management')
   return user ? JSON.parse(user) : user
 }
 
-// const loginGoogle = async (data) =>
-//   await axios.post(API_URL + '/login-google', data).then((res) => {
-//     const expires = 12 * 60 * 60 * 1000
-//     const in12Hour = new Date(new Date().getTime() + expires)
-//     Cookies.set('nstore_data', JSON.stringify(res.data), { expires: in12Hour })
-//     return res
-//   })
-
 const authService = {
   login,
-  register,
   logout,
-  sendCode,
   getCurrentUser,
-  // loginGoogle,
 }
 export default authService

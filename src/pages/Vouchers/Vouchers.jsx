@@ -115,10 +115,8 @@ export default function Vouchers() {
   const [loading, setLoading] = useState(false)
   const [createLoading, setCreateLoading] = useState(false)
   const [getUserLoading, setGetUserLoading] = useState(false)
-  //   const [searchLoading, setSearchLoading] = useState(false)
 
   const [code, setCode] = useState('')
-  //   const [searchKey, setSearchKey] = useState()
   const [voucher, setVoucher] = useState([])
 
   const [userVoucher, setUserVoucher] = useState([])
@@ -133,12 +131,13 @@ export default function Vouchers() {
         const data = await httpService.get(VOUCHER_API + '/all')
         setVoucher(data)
       } catch (error) {
+        message.error(showError(error))
       } finally {
         setLoading(false)
       }
     }
     fetchData()
-  }, [])
+  }, [message])
 
   const onCreate = async (values) => {
     try {

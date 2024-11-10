@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import authService from '../../services/authService'
 import { useAuth } from '../../App'
@@ -64,9 +64,6 @@ export default function Login() {
               Đăng nhập
             </Button>
           </Form>
-          <div className="text-center">
-            <Link className="text-gray-700">Quên mật khẩu?</Link>
-          </div>
         </div>
       </div>
     </>

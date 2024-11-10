@@ -317,7 +317,7 @@ export default function AddProduct() {
                 <InputNumber
                   size="large"
                   min={0}
-                  max={100}
+                  max={90}
                   className="w-full"
                   formatter={(value) => `${value}%`}
                   parser={(value) => value?.replace('%', '')}

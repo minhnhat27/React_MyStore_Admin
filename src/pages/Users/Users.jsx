@@ -140,7 +140,7 @@ export default function Users() {
   const [loading, setLoading] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const [searchKey, setSearchKey] = useState('')
-  const { notification } = App.useApp()
+  const { notification, message } = App.useApp()
 
   //paginate
   const [totalItems, setTotalItems] = useState(0)
@@ -180,14 +180,11 @@ export default function Users() {
           description: 'Đã khóa tài khoản',
         })
       } catch (error) {
-        notification.error({
-          message: 'Thất bại',
-          description: showError(error),
-        })
+        message.error(showError(error))
       } finally {
         setIsLockOutLoading(false)
       }
-    } catch {}
+    } catch (error) {}
   }
 
   const handleUnlock = async (id) => {
@@ -201,10 +198,7 @@ export default function Users() {
         description: 'Đã mở tài khoản',
       })
     } catch (error) {
-      notification.error({
-        message: 'Thất bại',
-        description: showError(error),
-      })
+      message.error(showError(error))
     } finally {
       setIsLockOutLoading(false)
     }
@@ -226,10 +220,7 @@ export default function Users() {
         setUsers(data?.items)
         setTotalItems(data?.totalItems)
       } catch (error) {
-        notification.error({
-          message: 'Thất bại',
-          description: showError(error),
-        })
+        message.error(showError(error))
         setSearchKey('')
       } finally {
         setLoading(false)
@@ -237,7 +228,7 @@ export default function Users() {
       }
     }
     fetchData()
-  }, [page, pageSize, searchKey, isUpdate, notification])
+  }, [page, pageSize, searchKey, isUpdate, message])
 
   const handleSearch = (key) => key && key !== searchKey && setSearchKey(key)
 

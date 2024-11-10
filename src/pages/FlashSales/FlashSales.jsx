@@ -20,7 +20,7 @@ import {
 import { useEffect, useState } from 'react'
 import httpService from '../../services/http-service'
 import { FLASHSALES_API, PRODUCT_API } from '../../services/const'
-import { formatDate, showError, toImageSrc } from '../../services/commonService'
+import { formatDate, formatVND, showError, toImageSrc } from '../../services/commonService'
 import dayjs from 'dayjs'
 
 const breadcrumbItems = [
@@ -33,20 +33,20 @@ const breadcrumbItems = [
   },
 ]
 
-const disabledDate = (current) => current && current < dayjs().endOf('day')
+const disabledDate = (current) => current && current < dayjs().add(-1, 'd').endOf('day')
 
 const timeFrames = [
   {
     value: 0,
-    label: 'Từ 00:00:00 đến 01:59:59',
+    label: '00:00:00 - 01:59:59',
   },
   {
     value: 1,
-    label: 'Từ 10:00:00 đến 11:59:59',
+    label: '10:00:00 - 11:59:59',
   },
   {
     value: 2,
-    label: 'Từ 19:00:00 đến 21:59:59',
+    label: '19:00:00 - 21:59:59',
   },
 ]
 
@@ -54,6 +54,7 @@ const flashSaleColumns = (handleDeleteFlashSale, onOpenUpdateFlashSale) => [
   {
     title: 'Mã chiến dịch',
     dataIndex: 'id',
+    width: 150,
   },
   {
     title: 'Ngày',
@@ -69,7 +70,18 @@ const flashSaleColumns = (handleDeleteFlashSale, onOpenUpdateFlashSale) => [
     title: 'Số lượng',
     dataIndex: 'productQuantity',
     align: 'center',
-    render: (value) => <span>{value} sản phẩm</span>,
+    render: (value) => <div>{value} sản phẩm</div>,
+  },
+  {
+    title: 'Đã bán',
+    dataIndex: 'totalSold',
+    align: 'center',
+  },
+  {
+    title: 'Tổng doanh thu',
+    dataIndex: 'totalRevenue',
+    align: 'center',
+    render: (value) => formatVND.format(value),
   },
   {
     title: 'Hành động',
@@ -126,13 +138,20 @@ const productColumns = [
     render: (value) => <div className="w-24 md:w-32 2xl:w-full line-clamp-2">{value}</div>,
   },
   {
-    title: 'Tên sản phẩm',
-    dataIndex: 'name',
-    render: (value) => <div className="w-24 md:w-32 2xl:w-full line-clamp-2">{value}</div>,
+    title: 'Giá',
+    dataIndex: 'price',
+    render: (value) => formatVND.format(value),
   },
   {
     title: 'Lượt bán',
+    align: 'center',
     dataIndex: 'sold',
+  },
+  {
+    align: 'center',
+    dataIndex: 'enable',
+    className: 'max-w-24',
+    render: (value) => !value && <div className="text-red-500 font-semibold">Sản phẩm bị ẩn</div>,
   },
 ]
 
@@ -206,10 +225,6 @@ export default function FlashSales() {
   const onOpenProductList = async () => {
     setOpenProductList(true)
     await handleGetProducts(productPage, productPageSize)
-  }
-
-  const onSelectProduct = (newKeys) => {
-    setSelectedRowKeys(newKeys)
   }
 
   const onCloseCreateFlashSale = () => {
@@ -328,6 +343,15 @@ export default function FlashSales() {
     }
   }
 
+  const rowSelection = {
+    onChange: (selectedRowKeys) => {
+      setSelectedRowKeys(selectedRowKeys)
+    },
+    getCheckboxProps: (record) => ({
+      disabled: !record.enable,
+    }),
+  }
+
   return (
     <>
       <div className="pb-4">
@@ -336,7 +360,10 @@ export default function FlashSales() {
           <div className="flex flex-col md:flex-row md:justify-between py-4">
             <Form.Item layout="horizontal" label="Lưu ý" required>
               <div>- Giảm giá chiến dịch sẽ không được cộng dồn với mức giảm giá gốc.</div>
-              <div>- Mức giảm giá lớn hơn sẽ được ưu tiên.</div>
+              <div>
+                - Giảm giá của chiến dịch sẽ được ưu tiên. Đặt mức giảm giá chiến dịch lớn hơn mức
+                giảm giá gốc để đạt được kết quả tốt nhất.
+              </div>
             </Form.Item>
             <Button
               className="ml-2"
@@ -426,15 +453,33 @@ export default function FlashSales() {
               const product = products.find((e) => e.id === id)
               return (
                 <div key={id} className="flex items-center gap-2">
-                  <Image
-                    rootClassName="shrink-0"
-                    width={80}
-                    height={100}
-                    src={toImageSrc(product?.imageUrl)}
-                    className="object-cover shrink-0"
-                  />
+                  {product.discountPercent ? (
+                    <Badge.Ribbon
+                      color="red"
+                      className="text-xs"
+                      text={`-${product.discountPercent}%`}
+                    >
+                      <Image
+                        rootClassName="shrink-0"
+                        width={80}
+                        height={100}
+                        src={toImageSrc(product?.imageUrl)}
+                        className="object-cover shrink-0"
+                      />
+                    </Badge.Ribbon>
+                  ) : (
+                    <Image
+                      rootClassName="shrink-0"
+                      width={80}
+                      height={100}
+                      src={toImageSrc(product?.imageUrl)}
+                      className="object-cover shrink-0"
+                    />
+                  )}
+
                   <div className="space-y-1 flex-1">
                     <div className="max-w-96 line-clamp-1">{product?.name}</div>
+                    <div>{formatVND.format(product?.price)}</div>
                     <div className="text-xs">Giảm giá (%)</div>
                     <InputNumber
                       onChange={(value) => onChangeProductInFlashSale(id, value)}
@@ -451,7 +496,7 @@ export default function FlashSales() {
           </div>
         </div>
         <Drawer
-          width={480}
+          width={640}
           styles={{ body: { padding: '0 1rem' } }}
           open={openProductList}
           onClose={onCloseProduct}
@@ -467,8 +512,8 @@ export default function FlashSales() {
           <Table
             rowSelection={{
               selectedRowKeys,
-              onChange: onSelectProduct,
               hideSelectAll: true,
+              ...rowSelection,
             }}
             columns={productColumns}
             dataSource={products}
@@ -495,7 +540,7 @@ export default function FlashSales() {
       <Modal
         open={openUpdate}
         cancelText="Đóng"
-        styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
+        styles={{ body: { maxHeight: '70vh', overflowY: 'auto', paddingRight: 4 } }}
         title="Chỉnh sửa chiến dịch"
         confirmLoading={createLoading}
         okButtonProps={{ autoFocus: true, htmlType: 'submit' }}
@@ -538,19 +583,35 @@ export default function FlashSales() {
         </div>
         <div>
           <div>Sản phẩm trong chiến dịch</div>
-          <div className="py-2">
+          <div className="py-2 space-y-2">
             {productLoading ? (
               <Skeleton active paragraph={{ rows: 5 }} />
             ) : (
               productsInFlashSale.map((item, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <Image
-                    rootClassName="shrink-0"
-                    width={80}
-                    height={100}
-                    src={toImageSrc(item?.imageUrl)}
-                    className="object-cover shrink-0"
-                  />
+                  {item.discountPercent ? (
+                    <Badge.Ribbon
+                      color="red"
+                      className="text-xs"
+                      text={`-${item.discountPercent}%`}
+                    >
+                      <Image
+                        rootClassName="shrink-0"
+                        width={80}
+                        height={100}
+                        src={toImageSrc(item.imageUrl)}
+                        className="object-cover shrink-0"
+                      />
+                    </Badge.Ribbon>
+                  ) : (
+                    <Image
+                      rootClassName="shrink-0"
+                      width={80}
+                      height={100}
+                      src={toImageSrc(item.imageUrl)}
+                      className="object-cover shrink-0"
+                    />
+                  )}
                   <div className="space-y-1 flex-1">
                     <div className="max-w-96 line-clamp-2">{item.name}</div>
                     <div className="text-xs">Giảm giá (%)</div>
@@ -561,11 +622,24 @@ export default function FlashSales() {
                       min={1}
                       max={90}
                       required
-                      className="w-full h-fit"
+                      className="h-fit"
                     />
+                  </div>
+                  <div className="text-end">
+                    <div>Giá gốc</div>
+                    <div>{formatVND.format(item.price)}</div>
                   </div>
                 </div>
               ))
+            )}
+            {productsInFlashSale.length <
+              flashSales.find((e) => e.id === updateId)?.productQuantity && (
+              <>
+                <span>* </span>
+                {flashSales.find((e) => e.id === updateId)?.productQuantity -
+                  productsInFlashSale.length}
+                <span> sản phẩm đã bị ẩn</span>
+              </>
             )}
           </div>
         </div>
