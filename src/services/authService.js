@@ -13,6 +13,16 @@ const login = async (data) =>
     return data
   })
 
+const loginGoogle = async (token) =>
+  await httpService.post(API_URL + '/login/google', { token }).then((data) => {
+    if (!data.isAdmin) {
+      throw new Error('Không có quyền truy cập!')
+    }
+    const expires = new Date(data.expires)
+    Cookies.set('voa_store_management', JSON.stringify(data), { expires })
+    return data
+  })
+
 const logout = () => Cookies.remove('voa_store_management')
 
 const getCurrentUser = () => {
@@ -22,6 +32,7 @@ const getCurrentUser = () => {
 
 const authService = {
   login,
+  loginGoogle,
   logout,
   getCurrentUser,
 }

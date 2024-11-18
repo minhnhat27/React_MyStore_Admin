@@ -7,6 +7,7 @@ import { BrowserRouter as Router, Routes } from 'react-router-dom'
 import { App as AntdApp, Spin } from 'antd'
 import { HubConnectionBuilder } from '@microsoft/signalr'
 import authService from './services/authService'
+import { GoogleOAuthProvider } from '@react-oauth/google'
 
 function App() {
   const [state, dispatch] = useReducer(reducer, initialState)
@@ -43,19 +44,19 @@ function App() {
   return (
     <AntdApp>
       <ChatContext.Provider value={{ chatConnection }}>
-        {/* <GoogleOAuthProvider clientId="85520695235-bavt8f6eq4e6v8hg0ad9v67im7fkm2mt.AntdApps.googleusercontent.com"> */}
-        <LoadingContext.Provider value={{ isLoading, setIsLoading }}>
-          <AuthContext.Provider value={{ state, dispatch }}>
-            <Router>
-              <Spin spinning={isLoading} fullscreen />
-              <Routes>
-                {generatePublicRoutes(state.isAuthenticated)}
-                {generatePrivateRoutes(state.isAuthenticated)}
-              </Routes>
-            </Router>
-          </AuthContext.Provider>
-        </LoadingContext.Provider>
-        {/* </GoogleOAuthProvider> */}
+        <GoogleOAuthProvider clientId="820711637866-jflfvuttu4t2elfp3rnnddgt259h6g6s.apps.googleusercontent.com">
+          <LoadingContext.Provider value={{ isLoading, setIsLoading }}>
+            <AuthContext.Provider value={{ state, dispatch }}>
+              <Router>
+                <Spin spinning={isLoading} fullscreen />
+                <Routes>
+                  {generatePublicRoutes(state.isAuthenticated)}
+                  {generatePrivateRoutes(state.isAuthenticated)}
+                </Routes>
+              </Router>
+            </AuthContext.Provider>
+          </LoadingContext.Provider>
+        </GoogleOAuthProvider>
       </ChatContext.Provider>
     </AntdApp>
   )

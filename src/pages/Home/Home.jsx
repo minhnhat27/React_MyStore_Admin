@@ -263,8 +263,7 @@ export default function Home() {
           <Statistic
             title="Tổng doanh thu"
             value={formatVND.format(total)}
-            valueStyle={{ color: 'red' }}
-            // prefix={<ArrowUpOutlined />}
+            valueStyle={{ color: 'green' }}
           />
         </Card>
       </div>
@@ -300,11 +299,11 @@ export default function Home() {
               <div className="text-sm">
                 {totalOrdersComparedToLastMonth > 0
                   ? 'Tăng '
-                  : 'Giảm ' +
-                    Math.abs((revenueComparedToLastMonth / revenuePrevMonth.revenue) * 100).toFixed(
+                  : 'Giảm ' + revenuePrevMonth.revenue > 0
+                  ? Math.abs((revenueComparedToLastMonth / revenuePrevMonth.revenue) * 100).toFixed(
                       0,
-                    ) +
-                    '% so với tháng trước'}
+                    )
+                  : 0 + '% so với tháng trước'}
               </div>
             }
           />

@@ -29,6 +29,15 @@ export const RequiredNote = {
   2: 'Không cho xem hàng',
 }
 
+export const Roles = {
+  Admin: 'Quản trị',
+  Employee: 'Nhân viên',
+  User: 'Khách hàng',
+}
+export const UserRole = 'User'
+export const AdminRole = 'Admin'
+export const EmployeeRole = 'Employee'
+
 export const OrderStatus = {
   0: 'Đang xử lý',
   1: 'Đã xác nhận',

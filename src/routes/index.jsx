@@ -36,7 +36,7 @@ export const navigateItems = [
   { key: '/home', icon: <PieChartOutlined />, label: 'Trang chủ' },
   { key: '/orders-management', icon: <ContainerOutlined />, label: 'Đơn hàng' },
   { key: '/products-management', icon: <ProductOutlined />, label: 'Sản phẩm' },
-  { key: '/previews-management', icon: <FireOutlined />, label: 'Chiến dịch giảm giá' },
+  { key: '/previews-management', icon: <FireOutlined />, label: 'Chiến dịch Flash Sale' },
   { key: '/vouchers-management', icon: <GiftOutlined />, label: 'Mã giảm giá' },
   {
     key: '/message',

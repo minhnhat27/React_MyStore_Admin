@@ -6,6 +6,7 @@ import { useAuth } from '../../App'
 import authActions from '../../services/authAction'
 import { Button, Form, Input, message } from 'antd'
 import { showError } from '../../services/commonService'
+import { GoogleLogin } from '@react-oauth/google'
 
 export default function Login() {
   const { state, dispatch } = useAuth()
@@ -20,10 +21,24 @@ export default function Login() {
     }
   }, [state.isAuthenticated, navigate])
 
-  const handleSubmitLogin = async () => {
+  const handleSubmitLogin = async (values) => {
     try {
       setLoading(true)
-      await authService.login(form.getFieldsValue())
+      await authService.login(values)
+      dispatch(authActions.LOGIN)
+      navigate('/home')
+    } catch (error) {
+      message.error(showError(error))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSuccessLogin = async (response) => {
+    try {
+      setLoading(true)
+      const token = response.credential
+      await authService.loginGoogle(token)
       dispatch(authActions.LOGIN)
       navigate('/home')
     } catch (error) {
@@ -64,6 +79,17 @@ export default function Login() {
               Đăng nhập
             </Button>
           </Form>
+          <div className="flex justify-center gap-4">
+            <Button disabled={loading} type="link" className="p-0">
+              <GoogleLogin
+                type="icon"
+                shape="circle"
+                useOneTap
+                onSuccess={handleSuccessLogin}
+                onError={() => message.error('Đăng nhập bằng Google thất bại')}
+              />
+            </Button>
+          </div>
         </div>
       </div>
     </>

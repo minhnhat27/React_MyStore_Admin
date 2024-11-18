@@ -248,9 +248,11 @@ export default function FlashSales() {
         productFlashSales: listProductFlashSale,
       }
       const res = await httpService.post(FLASHSALES_API, data)
-      setFlashSales((pre) => [...pre, res])
+      setFlashSales((pre) => [res, ...pre])
       setTotalItems((pre) => pre + 1)
       onCloseCreateFlashSale()
+
+      message.success('Tạo chiến dịch thành công')
     } catch (error) {
       message.error(showError(error))
     } finally {
@@ -263,6 +265,8 @@ export default function FlashSales() {
       await httpService.del(`${FLASHSALES_API}/${id}`)
       setFlashSales((pre) => pre.filter((e) => e.id !== id))
       setTotalItems((pre) => pre - 1)
+
+      message.success('Đã xóa chiến dịch')
     } catch (error) {
       message.error(showError(error))
     }
