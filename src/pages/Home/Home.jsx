@@ -191,9 +191,9 @@ export default function Home() {
   }
 
   const beforeUpload = (file) => {
-    const isLt2MB = file.size / 1024 / 1024 >= 2
-    if (!isLt2MB) {
-      message.error('Ảnh phải từ 2MB trở lên!')
+    const isLt1MB = file.size / 1024 / 1024 >= 1
+    if (!isLt1MB) {
+      message.error('Ảnh phải từ 1MB trở lên!')
       return Upload.LIST_IGNORE
     }
     return false
@@ -282,9 +282,9 @@ export default function Home() {
             }
             suffix={
               <div className="text-sm">
-                {totalOrdersComparedToLastMonth > 0
-                  ? 'Tăng '
-                  : 'Giảm ' + Math.abs(totalOrdersComparedToLastMonth) + ' so với tháng trước'}
+                {(totalOrdersComparedToLastMonth > 0 ? 'Tăng ' : 'Giảm ') +
+                  Math.abs(totalOrdersComparedToLastMonth) +
+                  ' so với tháng trước'}
               </div>
             }
           />
@@ -297,13 +297,13 @@ export default function Home() {
             prefix={revenueComparedToLastMonth > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
             suffix={
               <div className="text-sm">
-                {totalOrdersComparedToLastMonth > 0
-                  ? 'Tăng '
-                  : 'Giảm ' + revenuePrevMonth.revenue > 0
-                  ? Math.abs((revenueComparedToLastMonth / revenuePrevMonth.revenue) * 100).toFixed(
-                      0,
-                    )
-                  : 0 + '% so với tháng trước'}
+                {(totalOrdersComparedToLastMonth > 0 ? 'Tăng ' : 'Giảm ') +
+                  Math.abs(
+                    (revenueComparedToLastMonth /
+                      (revenuePrevMonth.revenue || revenueComparedToLastMonth)) *
+                      100,
+                  ).toFixed(0) +
+                  '% so với tháng trước'}
               </div>
             }
           />
@@ -331,7 +331,7 @@ export default function Home() {
                 beforeUpload={beforeUpload}
                 multiple
                 listType="picture-card"
-                accept="image/png, image/gif, image/jpeg, image/svg"
+                accept="image/png, image/gif, image/jpeg, image/svg, image/webp"
                 fileList={fileList}
                 onPreview={handlePreview}
                 onChange={onChangeBanner}

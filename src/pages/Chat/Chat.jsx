@@ -377,60 +377,63 @@ export default function Chat() {
                         </div>
                       ) : (
                         currentConversation && (
-                          <Form
-                            form={form}
-                            variant="borderless"
-                            className="flex gap-1"
-                            onFinish={handleSendMessage}
-                          >
-                            <Form.Item noStyle name="content" className="flex-1">
-                              <Input
-                                allowClear
-                                ref={inputRef}
-                                className="rounded-sm"
-                                placeholder="Nhập tin nhắn, nhấn Enter để gửi..."
-                              />
-                            </Form.Item>
-                            <Form.Item noStyle dependencies={['content']}>
-                              {({ getFieldValue }) => {
-                                const text = getFieldValue('content')?.trim()
-                                return (
-                                  <Button
-                                    disabled={!text}
-                                    className="px-1"
-                                    htmlType="submit"
-                                    type="link"
-                                  >
-                                    <SendOutlined className="text-xl" />
-                                  </Button>
-                                )
-                              }}
-                            </Form.Item>
-                            <Upload
-                              beforeUpload={beforeUpload}
-                              fileList={fileList}
-                              listType="picture"
-                              maxCount={1}
-                              showUploadList={false}
-                              onPreview={handlePreview}
-                              onChange={handleChange}
+                          <>
+                            <Divider className="my-1" />
+                            <Form
+                              form={form}
+                              variant="borderless"
+                              className="flex gap-1"
+                              onFinish={handleSendMessage}
                             >
-                              <Button disabled={fileList.length > 0} className="px-1" type="link">
-                                <PaperClipOutlined className="text-xl" />
-                              </Button>
-                            </Upload>
-                            {previewImage && (
-                              <AntdImage
-                                wrapperStyle={{ display: 'none' }}
-                                preview={{
-                                  visible: previewOpen,
-                                  onVisibleChange: (visible) => setPreviewOpen(visible),
-                                  afterOpenChange: (visible) => !visible && setPreviewImage(''),
+                              <Form.Item noStyle name="content" className="flex-1">
+                                <Input
+                                  allowClear
+                                  ref={inputRef}
+                                  className="rounded-sm border-gray-300"
+                                  placeholder="Nhập tin nhắn, nhấn Enter để gửi..."
+                                />
+                              </Form.Item>
+                              <Form.Item noStyle dependencies={['content']}>
+                                {({ getFieldValue }) => {
+                                  const text = getFieldValue('content')?.trim()
+                                  return (
+                                    <Button
+                                      disabled={!text}
+                                      className="px-1"
+                                      htmlType="submit"
+                                      type="link"
+                                    >
+                                      <SendOutlined className="text-xl" />
+                                    </Button>
+                                  )
                                 }}
-                                src={previewImage}
-                              />
-                            )}
-                          </Form>
+                              </Form.Item>
+                              <Upload
+                                beforeUpload={beforeUpload}
+                                fileList={fileList}
+                                listType="picture"
+                                maxCount={1}
+                                showUploadList={false}
+                                onPreview={handlePreview}
+                                onChange={handleChange}
+                              >
+                                <Button disabled={fileList.length > 0} className="px-1" type="link">
+                                  <PaperClipOutlined className="text-xl" />
+                                </Button>
+                              </Upload>
+                              {previewImage && (
+                                <AntdImage
+                                  wrapperStyle={{ display: 'none' }}
+                                  preview={{
+                                    visible: previewOpen,
+                                    onVisibleChange: (visible) => setPreviewOpen(visible),
+                                    afterOpenChange: (visible) => !visible && setPreviewImage(''),
+                                  }}
+                                  src={previewImage}
+                                />
+                              )}
+                            </Form>
+                          </>
                         )
                       )}
                     </div>

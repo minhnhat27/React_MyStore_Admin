@@ -33,6 +33,7 @@ import dayjs from 'dayjs'
 import BreadcrumbLink from '../../components/BreadcrumbLink'
 import httpService from '../../services/http-service'
 import { ACCOUNT_API, Roles, UserRole } from '../../services/const'
+import authService from '../../services/authService'
 // dayjs.extend(customParseFormat)
 // const dateFormat = 'YYYY-MM-DD'
 
@@ -118,6 +119,7 @@ const columns = (onLockOut, handleUnlock, onEditUser) => [
     align: 'center',
     render: (_, record) => (
       <>
+        {authService.getCurrentUser().session === record.session}
         <Button className="m-1" onClick={() => onEditUser(record.id)}>
           <EditOutlined />
         </Button>
@@ -352,6 +354,7 @@ export default function Users() {
         title="Khóa tài khoản"
         open={isLockoutModel}
         okType="danger"
+        centered
         okButtonProps={{ loading: isLockOutLoading, type: 'primary' }}
         onOk={handleOkLockout}
         cancelButtonProps={{ disabled: isLockOutLoading }}

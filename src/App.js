@@ -19,7 +19,7 @@ function App() {
     const connect = async () => {
       if (state.isAuthenticated) {
         connection = new HubConnectionBuilder()
-          .withUrl(process.env.REACT_APP_API_URL + '/chat', {
+          .withUrl(process.env.REACT_APP_API_URL + '/hub', {
             accessTokenFactory: () => authService.getCurrentUser()?.accessToken,
           })
           // .configureLogging(LogLevel.None)
@@ -50,8 +50,8 @@ function App() {
               <Router>
                 <Spin spinning={isLoading} fullscreen />
                 <Routes>
-                  {generatePublicRoutes(state.isAuthenticated)}
-                  {generatePrivateRoutes(state.isAuthenticated)}
+                  {generatePublicRoutes(state)}
+                  {generatePrivateRoutes(state)}
                 </Routes>
               </Router>
             </AuthContext.Provider>

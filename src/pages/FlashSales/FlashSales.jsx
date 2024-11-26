@@ -339,6 +339,7 @@ export default function FlashSales() {
         setOpenUpdate(false)
         setUpdateId(undefined)
         setListProductFlashSale([])
+        message.success('Cập nhật thành công')
       }
     } catch (error) {
       message.error(showError(error))

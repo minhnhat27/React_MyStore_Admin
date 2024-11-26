@@ -4,6 +4,7 @@ const user = authService.getCurrentUser()
 
 export const initialState = {
   isAuthenticated: user !== undefined,
+  roles: user?.roles,
 }
 
 export const reducer = (state, action) => {
@@ -12,11 +13,13 @@ export const reducer = (state, action) => {
       return {
         ...state,
         isAuthenticated: true,
+        roles: action.payload,
       }
     case 'LOGOUT':
       return {
         ...state,
         isAuthenticated: false,
+        roles: undefined,
       }
 
     default:

@@ -3,7 +3,19 @@ import { useAuth, useChat } from '../../../App'
 import authActions from '../../../services/authAction'
 
 import authService from '../../../services/authService'
-import { App, Avatar, Badge, Button, Popconfirm } from 'antd'
+import {
+  App,
+  Avatar,
+  Badge,
+  Button,
+  ConfigProvider,
+  Empty,
+  List,
+  Popconfirm,
+  Popover,
+  Skeleton,
+  Tooltip,
+} from 'antd'
 import {
   UserOutlined,
   MoonFilled,
@@ -11,9 +23,15 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   MessageTwoTone,
+  BellTwoTone,
+  DeleteOutlined,
+  NotificationOutlined,
 } from '@ant-design/icons'
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { RiCheckDoubleFill } from 'react-icons/ri'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { HubConnectionState } from '@microsoft/signalr'
+import { AdminRole } from '../../../services/const'
+import { formatDateTime } from '../../../services/commonService'
 
 export default function Header({ collapsed, toggleCollapsed }) {
   const { state, dispatch } = useAuth()
@@ -23,10 +41,17 @@ export default function Header({ collapsed, toggleCollapsed }) {
   const location = useLocation()
 
   const [pathname, setPathname] = useState(location.pathname)
-
   const [darkMode, setDarkMode] = useState(false)
+  const [countConversation, setCountConversation] = useState(0)
+  const [countNotification, setCountNotification] = useState(0)
 
-  const [count, setCount] = useState(0)
+  const [notifications, setNotifications] = useState([])
+  const [notificationLoading, setNotificationLoading] = useState(false)
+  const [newNotification, setNewNotification] = useState({
+    show: false,
+    message: undefined,
+    timeoutId: undefined,
+  })
 
   const [hasRegistered, setHasRegistered] = useState(false)
 
@@ -67,16 +92,28 @@ export default function Header({ collapsed, toggleCollapsed }) {
                 btn: (
                   <Link onClick={() => notification.destroy(key)} to={`/message?id=${id}`}>
                     <Button size="small" type="link" className="p-0">
-                      Xem ngay
+                      Xem
                     </Button>
                   </Link>
                 ),
                 key,
               })
-              setCount((pre) => pre + 1)
+              setCountConversation((pre) => pre + 1)
             }
             return pre
           })
+        })
+        chatConnection.on('notification', (notification) => {
+          setNewNotification((prev) => {
+            const timout = setTimeout(
+              () => setNewNotification((prev) => ({ ...prev, show: false })),
+              3000,
+            )
+            if (prev.show) clearTimeout(prev.timeoutId)
+            return { show: true, message: notification.message, timeoutId: timout }
+          })
+          setNotifications((prev) => [notification, ...prev])
+          setCountNotification((pre) => pre + 1)
         })
         setHasRegistered(true)
       } catch (err) {
@@ -87,20 +124,33 @@ export default function Header({ collapsed, toggleCollapsed }) {
 
   useEffect(() => {
     if (pathname === '/message') {
-      setCount(0)
+      setCountConversation(0)
     }
   }, [pathname])
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        if (chatConnection && chatConnection.state === HubConnectionState.Connected) {
+      if (chatConnection && chatConnection.state === HubConnectionState.Connected) {
+        try {
           const totalUnread = await chatConnection.invoke('TotalUnread')
-          setCount(totalUnread)
+          setCountConversation(totalUnread)
+        } catch (error) {
+          console.log(error)
+          setCountConversation(0)
         }
-      } catch (error) {
-        console.log(error)
-        setCount(0)
+        try {
+          setNotificationLoading(true)
+          const totalUnreadNotification = await chatConnection.invoke('TotalUnreadNotification')
+          setCountNotification(totalUnreadNotification)
+
+          const list_notification = await chatConnection.invoke('GetNotification', 1, 10)
+          setNotifications(list_notification)
+        } catch (error) {
+          console.log(error)
+          setCountNotification(0)
+        } finally {
+          setNotificationLoading(false)
+        }
       }
     }
     fetchData()
@@ -121,12 +171,111 @@ export default function Header({ collapsed, toggleCollapsed }) {
     localStorage.setItem('isDarkMode', !darkMode)
   }
 
+  const notificationContent = useMemo(() => {
+    const onReadNotification = (id) => {
+      if (chatConnection && chatConnection.state === HubConnectionState.Connected) {
+        chatConnection.invoke('ReadNotification', id)
+        setNotifications((prev) =>
+          prev.map((item) => (item.id === id ? { ...item, isRead: true } : item)),
+        )
+      }
+    }
+
+    return notificationLoading ? (
+      <div className="space-y-4 w-80">
+        {[...new Array(3)].map((_, i) => (
+          <Skeleton style={{}} className="w-full" key={i} active paragraph={{ rows: 2 }} />
+        ))}
+      </div>
+    ) : (
+      <ConfigProvider renderEmpty={() => <Empty description="Chưa có thông báo" />}>
+        <List
+          className="w-80 max-h-[70vh] overflow-y-auto"
+          size="large"
+          dataSource={notifications}
+          renderItem={(item) =>
+            !item.isRead ? (
+              <List.Item
+                onClick={() => !item.isRead && onReadNotification(item.id)}
+                extra={<Button type="link">Xóa</Button>}
+                className="cursor-pointer bg-slate-100"
+                style={{ padding: '0.5rem 0 0.5rem 1rem' }}
+              >
+                <Badge dot>
+                  <div className="text-sm">{item.message}</div>
+                  <div className="text-[0.65rem] mt-2 text-gray-500">
+                    {formatDateTime(item.createdAt)}
+                  </div>
+                </Badge>
+              </List.Item>
+            ) : (
+              <List.Item
+                extra={state.roles?.includes(AdminRole) && <Button type="link">Xóa</Button>}
+                className="cursor-pointer"
+                style={{ padding: '0.5rem 0 0.5rem 1rem' }}
+              >
+                <div>
+                  <div>{item.message}</div>
+                  <div className="text-[0.65rem] mt-2 text-gray-500">
+                    {formatDateTime(item.createdAt)}
+                  </div>
+                </div>
+              </List.Item>
+            )
+          }
+        />
+      </ConfigProvider>
+    )
+  }, [notificationLoading, notifications, chatConnection, state.roles])
+
+  const headerNotification = useMemo(() => {
+    const onReadAll = () => {
+      if (chatConnection && chatConnection.state === HubConnectionState.Connected) {
+        chatConnection.invoke('ReadAllNotification')
+        setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })))
+        setCountNotification(0)
+      }
+    }
+    const onDeleteAll = async () => {
+      if (chatConnection && chatConnection.state === HubConnectionState.Connected) {
+        await chatConnection.invoke('DeleteAllNotification')
+        setNotifications((prev) => prev.filter((e) => !e.isRead))
+      }
+    }
+    return (
+      <div className="flex items-center justify-between p-2 bg-gray-200">
+        <div>
+          <Badge dot={countNotification > 0}>
+            <NotificationOutlined />
+          </Badge>
+          <span className="ml-1">Trung tâm thông báo</span>
+        </div>
+        <div>
+          <Tooltip title="Đánh dấu tất cả là đã đọc">
+            <Button onClick={onReadAll} type="link" className="px-2">
+              <RiCheckDoubleFill className="text-lg" />
+            </Button>
+          </Tooltip>
+          {state.roles?.includes(AdminRole) && (
+            <Tooltip title="Xóa tất cả thông báo đã đọc">
+              <Popconfirm title="Xác nhận xóa tất cả" onConfirm={onDeleteAll}>
+                <Button type="link" className="px-2">
+                  <DeleteOutlined className="text-lg text-red-500" />
+                </Button>
+              </Popconfirm>
+            </Tooltip>
+          )}
+        </div>
+      </div>
+    )
+  }, [chatConnection, countNotification, state.roles])
+
   return (
     <>
-      <nav className="bg-white sticky top-0 z-20 border-b border-gray-200 dark:border-black dark:bg-black">
-        <div className="px-2 h-20 flex flex-nowrap items-center">
+      <nav className="bg-slate-100 shadow sticky top-0 z-20 dark:border-black dark:bg-black">
+        <div className="px-2 h-20 flex justify-end md:justify-between flex-nowrap items-center">
           <div
-            className="border py-1 px-3 rounded-md text-base cursor-pointer dark:text-slate-300"
+            className="hidden md:block border py-1 px-3 rounded-md text-base cursor-pointer dark:text-slate-300"
             onClick={toggleCollapsed}
           >
             {sessionStorage.getItem('collapsed') === 'true' || collapsed ? (
@@ -136,9 +285,27 @@ export default function Header({ collapsed, toggleCollapsed }) {
             )}
           </div>
 
-          <div className="flex flex-1 justify-end items-center shrink-0 md:order-2 space-x-4 rtl:space-x-reverse">
+          <div className="flex gap-3 shrink-0">
+            <Popover title={headerNotification} trigger="click" content={notificationContent}>
+              <Badge count={countNotification} className="select-none border rounded-lg">
+                <Popover
+                  placement="left"
+                  content={<div className="w-80 line-clamp-2">{newNotification.message}</div>}
+                  trigger="click"
+                  open={newNotification.show}
+                >
+                  <Avatar
+                    icon={<BellTwoTone />}
+                    className="bg-white hover:bg-gray-200 cursor-pointer"
+                    shape="square"
+                    size="large"
+                  />
+                </Popover>
+              </Badge>
+            </Popover>
+
             <Link to="/message">
-              <Badge count={count} className="select-none border rounded-lg">
+              <Badge count={countConversation} className="select-none border rounded-lg">
                 <Avatar
                   className="bg-white hover:bg-gray-200 cursor-pointer"
                   icon={<MessageTwoTone />}

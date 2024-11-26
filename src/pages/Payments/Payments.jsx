@@ -4,8 +4,9 @@ import { DeleteOutlined, EditTwoTone, HomeFilled } from '@ant-design/icons'
 import { useEffect } from 'react'
 import { showError } from '../../services/commonService'
 import httpService from '../../services/http-service'
-import { PAYMENT_API } from '../../services/const'
+import { AdminRole, EmployeeRole, PAYMENT_API } from '../../services/const'
 import BreadcrumbLink from '../../components/BreadcrumbLink'
+import { useAuth } from '../../App'
 
 const breadcrumbItems = [
   {
@@ -17,7 +18,7 @@ const breadcrumbItems = [
   },
 ]
 
-const columns = (handleDelete, onEdit) => [
+const columns = (roles, handleDelete, onEdit) => [
   {
     title: 'Tên',
     dataIndex: 'name',
@@ -40,11 +41,13 @@ const columns = (handleDelete, onEdit) => [
             <EditTwoTone />
           </Button>
         </Tooltip>
-        <Popconfirm title="Xác nhận xóa?" onConfirm={() => handleDelete(record.id)}>
-          <Button danger className="flex items-center">
-            <DeleteOutlined className="text-red-500" />
-          </Button>
-        </Popconfirm>
+        {roles?.includes(AdminRole) && (
+          <Popconfirm title="Xác nhận xóa?" onConfirm={() => handleDelete(record.id)}>
+            <Button danger className="flex items-center">
+              <DeleteOutlined className="text-red-500" />
+            </Button>
+          </Popconfirm>
+        )}
       </div>
     ),
   },
@@ -52,6 +55,9 @@ const columns = (handleDelete, onEdit) => [
 
 export default function Payments() {
   const { message } = App.useApp()
+
+  const { state } = useAuth()
+
   const [loading, setLoading] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
 
@@ -126,7 +132,7 @@ export default function Payments() {
         <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
           <Card className="md:col-span-2 drop-shadow">
             <Table
-              columns={columns(handleDelete, onEdit)}
+              columns={columns(state.roles, handleDelete, onEdit)}
               dataSource={payments}
               rowKey={(record) => record.id}
               className="overflow-x-auto"
@@ -135,44 +141,47 @@ export default function Payments() {
               loading={loading}
             />
           </Card>
-          <Card title="Phương thức" className="h-fit bg-white drop-shadow">
-            <Form layout="vertical" form={form} disabled={saveLoading} onFinish={handleSave}>
-              <Form.Item
-                label="Tên phương thức"
-                name="name"
-                rules={[{ required: true, message: 'Vui lòng nhập tên' }]}
-              >
-                <Input
-                  count={{
-                    show: true,
-                    max: 25,
-                  }}
-                  maxLength={25}
-                  size="large"
-                  placeholder="VNPay, MoMo,..."
-                  allowClear
-                />
-              </Form.Item>
-
-              <Form.Item label="Kích hoạt" name="isActive">
-                <Switch defaultChecked={false} />
-              </Form.Item>
-
-              <div className="grid grid-cols-2 gap-2">
-                <Button type="primary" htmlType="submit" className="w-full" size="large">
-                  {saveLoading ? <Spin /> : isUpdate ? 'Cập nhật' : 'Thêm'}
-                </Button>
-                <Button
-                  disabled={!isUpdate || saveLoading}
-                  onClick={handleClear}
-                  className="w-full"
-                  size="large"
+          {(state.roles?.includes(AdminRole) ||
+            (state.roles?.includes(EmployeeRole) && isUpdate)) && (
+            <Card title="Phương thức" className="h-fit bg-white drop-shadow">
+              <Form layout="vertical" form={form} disabled={saveLoading} onFinish={handleSave}>
+                <Form.Item
+                  label="Tên phương thức"
+                  name="name"
+                  rules={[{ required: true, message: 'Vui lòng nhập tên' }]}
                 >
-                  Clear
-                </Button>
-              </div>
-            </Form>
-          </Card>
+                  <Input
+                    count={{
+                      show: true,
+                      max: 25,
+                    }}
+                    maxLength={25}
+                    size="large"
+                    placeholder="VNPay, MoMo,..."
+                    allowClear
+                  />
+                </Form.Item>
+
+                <Form.Item label="Kích hoạt" name="isActive">
+                  <Switch defaultChecked={false} />
+                </Form.Item>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Button type="primary" htmlType="submit" className="w-full" size="large">
+                    {saveLoading ? <Spin /> : isUpdate ? 'Cập nhật' : 'Thêm'}
+                  </Button>
+                  <Button
+                    disabled={!isUpdate || saveLoading}
+                    onClick={handleClear}
+                    className="w-full"
+                    size="large"
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </Form>
+            </Card>
+          )}
         </div>
       </div>
     </>

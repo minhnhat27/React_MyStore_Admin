@@ -3,7 +3,6 @@ import { Fragment } from 'react'
 
 import {
   ContainerOutlined,
-  LoginOutlined,
   PieChartOutlined,
   UserOutlined,
   ProductOutlined,
@@ -20,7 +19,6 @@ import Login from '../pages/Login'
 import Products from '../pages/Products'
 import Orders from '../pages/Orders'
 import AddProduct from '../pages/Products/AddProduct'
-import OrderDetail from '../pages/Orders/OrderDetail'
 import Brand from '../pages/ProductAttributes/Brands'
 import Category from '../pages/ProductAttributes/Categories'
 import Materials from '../pages/ProductAttributes/Materials'
@@ -31,12 +29,13 @@ import Sizes from '../pages/ProductAttributes/Sizes'
 import Payments from '../pages/Payments'
 import Vouchers from '../pages/Vouchers'
 import FlashSales from '../pages/FlashSales'
+import { AdminRole, EmployeeRole } from '../services/const'
 
-export const navigateItems = [
+export const navigateItemsAdmin = [
   { key: '/home', icon: <PieChartOutlined />, label: 'Trang chủ' },
   { key: '/orders-management', icon: <ContainerOutlined />, label: 'Đơn hàng' },
   { key: '/products-management', icon: <ProductOutlined />, label: 'Sản phẩm' },
-  { key: '/previews-management', icon: <FireOutlined />, label: 'Chiến dịch Flash Sale' },
+  { key: '/flashsales-management', icon: <FireOutlined />, label: 'Chiến dịch Flash Sale' },
   { key: '/vouchers-management', icon: <GiftOutlined />, label: 'Mã giảm giá' },
   {
     key: '/message',
@@ -56,7 +55,19 @@ export const navigateItems = [
       { key: '/sizes-management', label: 'Kích cỡ' },
     ],
   },
-  { key: '/', icon: <LoginOutlined />, label: 'Đăng nhập' },
+]
+
+export const navigateItemsEmployee = [
+  { key: '/home', icon: <PieChartOutlined />, label: 'Trang chủ' },
+  { key: '/orders-management', icon: <ContainerOutlined />, label: 'Đơn hàng' },
+  { key: '/products-management', icon: <ProductOutlined />, label: 'Sản phẩm' },
+  { key: '/flashsales-management', icon: <FireOutlined />, label: 'Chiến dịch Flash Sale' },
+  {
+    key: '/message',
+    icon: <MessageFilled />,
+    label: 'Trò chuyện',
+  },
+  { key: '/payments-management', icon: <ContainerOutlined />, label: 'Thanh toán' },
 ]
 
 export const publicRoutes = [
@@ -64,21 +75,18 @@ export const publicRoutes = [
   { path: '*', component: NotFound, layout: null },
 ]
 
-export const privateRoutes = [
+const adminRoute = [
   { path: '/home', component: Home },
-
   { path: '/message', component: Message },
-
   { path: '/products-management', component: Products },
   { path: '/products-management/product-detail/:id', component: ProductDetail },
   { path: '/products-management/add-product', component: AddProduct },
 
   { path: '/users-management', component: Users },
   { path: '/vouchers-management', component: Vouchers },
-  { path: '/previews-management', component: FlashSales },
+  { path: '/flashsales-management', component: FlashSales },
 
   { path: '/orders-management', component: Orders },
-  { path: '/orders-management/order-detail/:id', component: OrderDetail },
   { path: '/payments-management', component: Payments },
 
   { path: '/brands-management', component: Brand },
@@ -86,8 +94,20 @@ export const privateRoutes = [
   { path: '/materials-management', component: Materials },
   { path: '/sizes-management', component: Sizes },
 ]
+const employeeRoute = [
+  { path: '/home', component: Home },
+  { path: '/message', component: Message },
+  { path: '/products-management', component: Products },
+  { path: '/products-management/product-detail/:id', component: ProductDetail },
+  { path: '/products-management/add-product', component: AddProduct },
 
-export const generatePublicRoutes = (isAuthenticated) => {
+  { path: '/flashsales-management', component: FlashSales },
+
+  { path: '/orders-management', component: Orders },
+  { path: '/payments-management', component: Payments },
+]
+
+export const generatePublicRoutes = (state) => {
   return publicRoutes.map((route, index) => {
     const Page = route.component
     let Layout = DefaultLayout
@@ -97,7 +117,7 @@ export const generatePublicRoutes = (isAuthenticated) => {
     } else if (route.layout === null) {
       Layout = Fragment
     }
-    if (isAuthenticated && route.path === '/') {
+    if (state.isAuthenticated && route.path === '/') {
       return <Route key={index} path={route.path} element={<Navigate to="/home" />} />
     }
     return (
@@ -114,31 +134,55 @@ export const generatePublicRoutes = (isAuthenticated) => {
   })
 }
 
-export const generatePrivateRoutes = (isAuthenticated) => {
-  if (isAuthenticated) {
-    return privateRoutes.map((route, index) => {
-      const Page = route.component
-      let Layout = DefaultLayout
+export const generatePrivateRoutes = (state) => {
+  if (state.isAuthenticated) {
+    if (state.roles && state.roles.includes(AdminRole)) {
+      return adminRoute.map((route, index) => {
+        const Page = route.component
+        let Layout = DefaultLayout
 
-      if (route.layout) {
-        Layout = route.layout
-      } else if (route.layout === null) {
-        Layout = Fragment
-      }
-      return (
-        <Route
-          key={index}
-          path={route.path}
-          element={
-            <Layout>
-              <Page />
-            </Layout>
-          }
-        />
-      )
-    })
+        if (route.layout) {
+          Layout = route.layout
+        } else if (route.layout === null) {
+          Layout = Fragment
+        }
+        return (
+          <Route
+            key={index}
+            path={route.path}
+            element={
+              <Layout>
+                <Page />
+              </Layout>
+            }
+          />
+        )
+      })
+    } else if (state.roles && state.roles.includes(EmployeeRole)) {
+      return employeeRoute.map((route, index) => {
+        const Page = route.component
+        let Layout = DefaultLayout
+
+        if (route.layout) {
+          Layout = route.layout
+        } else if (route.layout === null) {
+          Layout = Fragment
+        }
+        return (
+          <Route
+            key={index}
+            path={route.path}
+            element={
+              <Layout>
+                <Page />
+              </Layout>
+            }
+          />
+        )
+      })
+    }
   } else {
-    return privateRoutes.map((route, index) => (
+    return adminRoute.map((route, index) => (
       <Route key={index} path={route.path} element={<Navigate to="/" />} />
     ))
   }

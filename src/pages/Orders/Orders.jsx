@@ -172,8 +172,7 @@ const columns = (
 ]
 
 export default function Orders() {
-  const { notification, message } = App.useApp()
-
+  const { message } = App.useApp()
   const [form] = Form.useForm()
 
   const [sendOrderOpen, setSendOrderOpen] = useState(false)
@@ -186,7 +185,7 @@ export default function Orders() {
   const [orderLoading, setOrderLoading] = useState(false)
 
   const [searchLoading, setSearchLoading] = useState(false)
-  const [searchKey, setSearchKey] = useState()
+  const [searchKey, setSearchKey] = useState('')
 
   const [totalItems, setTotalItems] = useState(0)
   const [page, setPage] = useState(1)
@@ -262,6 +261,7 @@ export default function Orders() {
       const data = { currentStatus }
       await httpService.put(ORDER_API + `/next-status/${id}`, data)
       setOrders((pre) => pre.filter((e) => e.id !== id))
+      message.success(`Đã duyệt đơn ${id}`)
     } catch (error) {
       message.error(showError(error))
     } finally {
@@ -291,10 +291,7 @@ export default function Orders() {
       setSendOrderLoading(true)
       await httpService.put(ORDER_API + `/shipping/${orderId}`, values)
 
-      notification.success({
-        message: 'Thành công',
-        description: 'Đã gửi đơn hàng cho đơn vị vận chuyển',
-      })
+      message.success('Đã gửi đơn hàng cho đơn vị vận chuyển')
       setOrderId(undefined)
       setOrders((pre) => pre.filter((e) => e.id !== orderId))
       setSendOrderOpen(false)

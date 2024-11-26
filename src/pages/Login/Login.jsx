@@ -24,8 +24,8 @@ export default function Login() {
   const handleSubmitLogin = async (values) => {
     try {
       setLoading(true)
-      await authService.login(values)
-      dispatch(authActions.LOGIN)
+      const roles = await authService.login(values)
+      dispatch(authActions.LOGIN(roles))
       navigate('/home')
     } catch (error) {
       message.error(showError(error))
@@ -38,8 +38,8 @@ export default function Login() {
     try {
       setLoading(true)
       const token = response.credential
-      await authService.loginGoogle(token)
-      dispatch(authActions.LOGIN)
+      const roles = await authService.loginGoogle(token)
+      dispatch(authActions.LOGIN(roles))
       navigate('/home')
     } catch (error) {
       message.error(showError(error))

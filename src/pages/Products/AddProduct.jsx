@@ -348,7 +348,7 @@ export default function AddProduct() {
                 beforeUpload={() => false}
                 listType="picture-card"
                 fileList={fileList}
-                accept="image/png, image/gif, image/jpeg, image/svg"
+                accept="image/png, image/gif, image/jpeg, image/svg, image/webp"
                 multiple
                 onPreview={handlePreview}
                 onChange={handleChangeFile}
@@ -432,7 +432,7 @@ export default function AddProduct() {
                             beforeUpload={() => false}
                             listType="text"
                             fileList={file}
-                            accept="image/png, image/gif, image/jpeg, image/svg"
+                            accept="image/png, image/gif, image/jpeg, image/svg, image/webp"
                             onPreview={handlePreview}
                             onChange={(e) => handleChangeColorFile(e, key)}
                           >

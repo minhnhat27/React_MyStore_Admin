@@ -36,7 +36,8 @@ import {
 } from '@ant-design/icons'
 import BreadcrumbLink from '../../components/BreadcrumbLink'
 import httpService from '../../services/http-service'
-import { PRODUCT_API } from '../../services/const'
+import { AdminRole, PRODUCT_API } from '../../services/const'
+import { useAuth } from '../../App'
 
 const breadcrumbItems = [
   {
@@ -60,6 +61,7 @@ const ReviewFilters = [
 ]
 
 const columns = (
+  roles,
   handleChangeEnable,
   handleDeleteProduct,
   onOpenReview,
@@ -189,17 +191,20 @@ const columns = (
             </Button>
           </Link>
         </Tooltip>
-        <Popconfirm title="Xác nhận xóa?" onConfirm={() => handleDeleteProduct(record.id)}>
-          <Button className="m-1">
-            <DeleteOutlined className="text-red-500" />
-          </Button>
-        </Popconfirm>
+        {roles?.includes(AdminRole) && (
+          <Popconfirm title="Xác nhận xóa?" onConfirm={() => handleDeleteProduct(record.id)}>
+            <Button className="m-1">
+              <DeleteOutlined className="text-red-500" />
+            </Button>
+          </Popconfirm>
+        )}
       </div>
     ),
   },
 ]
 
 export default function Products() {
+  const { state } = useAuth()
   const { message } = App.useApp()
   const [products, setProducts] = useState([])
 
@@ -410,6 +415,7 @@ export default function Products() {
 
           <Table
             columns={columns(
+              state.roles,
               handleChangeEnable,
               handleDeleteProduct,
               onOpenReview,

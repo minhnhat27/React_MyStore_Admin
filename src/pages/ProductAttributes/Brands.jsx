@@ -232,7 +232,7 @@ export default function Brand() {
                   maxCount={1}
                   listType="picture-card"
                   fileList={fileList}
-                  accept="image/png, image/gif, image/jpeg, image/svg"
+                  accept="image/png, image/gif, image/jpeg, image/svg, image/webp"
                   onPreview={handlePreview}
                   onChange={handleChangeFile}
                 >
