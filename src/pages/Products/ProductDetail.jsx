@@ -214,11 +214,13 @@ export default function ProductDetail() {
       setUpdateLoading(true)
       const formData = new FormData()
 
-      fileList.forEach((item, i) =>
-        item.originFileObj
-          ? formData.append(`images`, item.originFileObj)
-          : formData.append(`imageUrls[${i}]`, item.originUrl),
-      )
+      fileList
+        .reverse()
+        .forEach((item, i) =>
+          item.originFileObj
+            ? formData.append(`images`, item.originFileObj)
+            : formData.append(`imageUrls[${i}]`, item.originUrl),
+        )
 
       const data = {
         ...values,
@@ -295,6 +297,7 @@ export default function ProductDetail() {
                   className="w-full"
                   size="large"
                   optionFilterProp="label"
+                  showSearch
                   placeholder="Chọn"
                   options={productAttributes.brands}
                 />
@@ -309,6 +312,7 @@ export default function ProductDetail() {
                   className="w-full"
                   size="large"
                   optionFilterProp="label"
+                  showSearch
                   placeholder="Chọn"
                   options={productAttributes.categories}
                 />
@@ -578,8 +582,15 @@ export default function ProductDetail() {
                 htmlType="submit"
                 className="w-full"
                 size="large"
+                onClick={() =>
+                  form.validateFields().catch((errorInfo) => {
+                    const firstErrorField =
+                      errorInfo.errorFields?.[0]?.errors?.[0] || 'Vui lòng điền đầy đủ thông tin'
+                    message.error(firstErrorField)
+                  })
+                }
               >
-                {updateLoading ? <Spin /> : 'Update'}
+                {updateLoading ? <Spin /> : 'Cập nhật'}
               </Button>
 
               <ConfigProvider

@@ -38,6 +38,7 @@ import BreadcrumbLink from '../../components/BreadcrumbLink'
 import httpService from '../../services/http-service'
 import { AdminRole, PRODUCT_API } from '../../services/const'
 import { useAuth } from '../../App'
+import { FiRefreshCcw } from 'react-icons/fi'
 
 const breadcrumbItems = [
   {
@@ -404,6 +405,20 @@ export default function Products() {
               onSearch={(key) => handleSearch(key)}
               onChange={(e) => e.target.value === '' && setSearchKey('')}
             />
+            {state?.roles.includes(AdminRole) && (
+              <Tooltip title="Xử lý ảnh lại">
+                <Button
+                  onClick={() => {
+                    httpService.get(PRODUCT_API + '/retrain')
+                    message.success('Đã gửi yêu cầu xử lý ảnh lại')
+                  }}
+                  size="large"
+                  type="primary"
+                >
+                  <FiRefreshCcw />
+                </Button>
+              </Tooltip>
+            )}
             <Tooltip title="Thêm sản phẩm">
               <Link to="add-product">
                 <Button size="large" type="primary">

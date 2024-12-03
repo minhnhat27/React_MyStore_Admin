@@ -14,6 +14,7 @@ import {
   Popconfirm,
   Popover,
   Skeleton,
+  Tag,
   Tooltip,
 } from 'antd'
 import {
@@ -28,6 +29,7 @@ import {
   NotificationOutlined,
 } from '@ant-design/icons'
 import { RiCheckDoubleFill } from 'react-icons/ri'
+import { FiBell, FiBellOff } from 'react-icons/fi'
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { HubConnectionState } from '@microsoft/signalr'
 import { AdminRole } from '../../../services/const'
@@ -47,10 +49,19 @@ export default function Header({ collapsed, toggleCollapsed }) {
 
   const [notifications, setNotifications] = useState([])
   const [notificationLoading, setNotificationLoading] = useState(false)
+  const [mute, setMute] = useState(localStorage.getItem('mute') === 'true' ?? false)
+
   const [newNotification, setNewNotification] = useState({
     show: false,
     message: undefined,
     timeoutId: undefined,
+  })
+
+  const [newMessage, setNewMessage] = useState({
+    show: false,
+    message: undefined,
+    timeoutId: undefined,
+    image: undefined,
   })
 
   const [hasRegistered, setHasRegistered] = useState(false)
@@ -80,23 +91,36 @@ export default function Header({ collapsed, toggleCollapsed }) {
         chatConnection.on('onAdmin', (id, message, image) => {
           setPathname((pre) => {
             if (pre !== '/message') {
-              const key = `open${Date.now()}`
-              notification.info({
-                message: <div className="font-semibold">Có tin nhắn mới</div>,
-                description: (
-                  <>
-                    <div>{message}</div>
-                    {image && <div>kèm hình ảnh</div>}
-                  </>
-                ),
-                btn: (
-                  <Link onClick={() => notification.destroy(key)} to={`/message?id=${id}`}>
-                    <Button size="small" type="link" className="p-0">
-                      Xem
-                    </Button>
-                  </Link>
-                ),
-                key,
+              // const key = `open${Date.now()}`
+              // notification.info({
+              //   message: <div className="font-semibold">Có tin nhắn mới</div>,
+              //   description: (
+              //     <>
+              //       <div>{message}</div>
+              //       {image && <div>kèm hình ảnh</div>}
+              //     </>
+              //   ),
+              //   btn: (
+              //     <Link onClick={() => notification.destroy(key)} to={`/message?id=${id}`}>
+              //       <Button size="small" type="link" className="p-0">
+              //         Xem
+              //       </Button>
+              //     </Link>
+              //   ),
+              //   key,
+              // })
+              setNewMessage((prev) => {
+                const timout = setTimeout(
+                  () => setNewMessage((prev) => ({ ...prev, show: false })),
+                  3000,
+                )
+                if (prev.show) clearTimeout(prev.timeoutId)
+                return {
+                  show: true,
+                  message: message,
+                  timeoutId: timout,
+                  image: image ? true : undefined,
+                }
               })
               setCountConversation((pre) => pre + 1)
             }
@@ -104,13 +128,18 @@ export default function Header({ collapsed, toggleCollapsed }) {
           })
         })
         chatConnection.on('notification', (notification) => {
-          setNewNotification((prev) => {
-            const timout = setTimeout(
-              () => setNewNotification((prev) => ({ ...prev, show: false })),
-              3000,
-            )
-            if (prev.show) clearTimeout(prev.timeoutId)
-            return { show: true, message: notification.message, timeoutId: timout }
+          setMute((prev) => {
+            if (!prev) {
+              setNewNotification((prev) => {
+                const timout = setTimeout(
+                  () => setNewNotification((prev) => ({ ...prev, show: false })),
+                  3000,
+                )
+                if (prev.show) clearTimeout(prev.timeoutId)
+                return { show: true, message: notification.message, timeoutId: timout }
+              })
+            }
+            return prev
           })
           setNotifications((prev) => [notification, ...prev])
           setCountNotification((pre) => pre + 1)
@@ -143,7 +172,7 @@ export default function Header({ collapsed, toggleCollapsed }) {
           const totalUnreadNotification = await chatConnection.invoke('TotalUnreadNotification')
           setCountNotification(totalUnreadNotification)
 
-          const list_notification = await chatConnection.invoke('GetNotification', 1, 10)
+          const list_notification = await chatConnection.invoke('GetNotification')
           setNotifications(list_notification)
         } catch (error) {
           console.log(error)
@@ -178,6 +207,15 @@ export default function Header({ collapsed, toggleCollapsed }) {
         setNotifications((prev) =>
           prev.map((item) => (item.id === id ? { ...item, isRead: true } : item)),
         )
+        setCountNotification((prev) => prev - 1)
+      }
+    }
+
+    const onDeleteNotification = (id, isRead) => {
+      if (chatConnection && chatConnection.state === HubConnectionState.Connected) {
+        chatConnection.invoke('DeleteNotification', id)
+        setNotifications((prev) => prev.filter((item) => item.id !== id))
+        if (!isRead) setCountNotification((prev) => prev - 1)
       }
     }
 
@@ -190,14 +228,13 @@ export default function Header({ collapsed, toggleCollapsed }) {
     ) : (
       <ConfigProvider renderEmpty={() => <Empty description="Chưa có thông báo" />}>
         <List
-          className="w-80 max-h-[70vh] overflow-y-auto"
+          className="w-80 max-h-[65vh] overflow-y-auto"
           size="large"
           dataSource={notifications}
           renderItem={(item) =>
             !item.isRead ? (
               <List.Item
                 onClick={() => !item.isRead && onReadNotification(item.id)}
-                extra={<Button type="link">Xóa</Button>}
                 className="cursor-pointer bg-slate-100"
                 style={{ padding: '0.5rem 0 0.5rem 1rem' }}
               >
@@ -207,19 +244,31 @@ export default function Header({ collapsed, toggleCollapsed }) {
                     {formatDateTime(item.createdAt)}
                   </div>
                 </Badge>
+                {/* <Tooltip title="Xóa thông báo">
+                  <Popconfirm
+                    title="Xác nhận xóa thông báo"
+                    onConfirm={() => onDeleteNotification(item.id, item.isRead)}
+                  >
+                    <Button type="link">Xóa</Button>
+                  </Popconfirm>
+                </Tooltip> */}
               </List.Item>
             ) : (
-              <List.Item
-                extra={state.roles?.includes(AdminRole) && <Button type="link">Xóa</Button>}
-                className="cursor-pointer"
-                style={{ padding: '0.5rem 0 0.5rem 1rem' }}
-              >
+              <List.Item className="cursor-pointer" style={{ padding: '0.5rem 0 0.5rem 1rem' }}>
                 <div>
                   <div>{item.message}</div>
                   <div className="text-[0.65rem] mt-2 text-gray-500">
                     {formatDateTime(item.createdAt)}
                   </div>
                 </div>
+                {state.roles?.includes(AdminRole) && (
+                  <Popconfirm
+                    title="Xác nhận xóa thông báo"
+                    onConfirm={() => onDeleteNotification(item.id, item.isRead)}
+                  >
+                    <Button type="link">Xóa</Button>
+                  </Popconfirm>
+                )}
               </List.Item>
             )
           }
@@ -239,36 +288,58 @@ export default function Header({ collapsed, toggleCollapsed }) {
     const onDeleteAll = async () => {
       if (chatConnection && chatConnection.state === HubConnectionState.Connected) {
         await chatConnection.invoke('DeleteAllNotification')
-        setNotifications((prev) => prev.filter((e) => !e.isRead))
+        setNotifications((prev) => {
+          const newList = prev.filter((e) => !e.isRead)
+          setCountNotification(newList.length)
+          return newList
+        })
       }
     }
+
+    const onChangeNotification = () => {
+      setMute((prev) => !prev)
+      localStorage.setItem('mute', !mute)
+    }
+
     return (
-      <div className="flex items-center justify-between p-2 bg-gray-200">
-        <div>
-          <Badge dot={countNotification > 0}>
-            <NotificationOutlined />
-          </Badge>
-          <span className="ml-1">Trung tâm thông báo</span>
-        </div>
-        <div>
-          <Tooltip title="Đánh dấu tất cả là đã đọc">
-            <Button onClick={onReadAll} type="link" className="px-2">
-              <RiCheckDoubleFill className="text-lg" />
-            </Button>
-          </Tooltip>
-          {state.roles?.includes(AdminRole) && (
-            <Tooltip title="Xóa tất cả thông báo đã đọc">
-              <Popconfirm title="Xác nhận xóa tất cả" onConfirm={onDeleteAll}>
-                <Button type="link" className="px-2">
-                  <DeleteOutlined className="text-lg text-red-500" />
-                </Button>
-              </Popconfirm>
+      <div className="bg-gray-200 p-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <Badge dot={countNotification > 0}>
+              <NotificationOutlined />
+            </Badge>
+            <span className="ml-1">Trung tâm thông báo</span>
+          </div>
+          <div>
+            <Tooltip title={mute ? 'Bật thông báo' : 'Tắt thông báo'}>
+              <Button onClick={onChangeNotification} type="link" className="px-2">
+                {mute ? <FiBell className="text-lg" /> : <FiBellOff className="text-lg" />}
+              </Button>
             </Tooltip>
-          )}
+            <Tooltip title="Đánh dấu tất cả là đã đọc">
+              <Button onClick={onReadAll} type="link" className="px-2">
+                <RiCheckDoubleFill className="text-lg" />
+              </Button>
+            </Tooltip>
+            {state.roles?.includes(AdminRole) && (
+              <Tooltip title="Xóa tất cả thông báo đã đọc">
+                <Popconfirm title="Xác nhận xóa tất cả" onConfirm={onDeleteAll}>
+                  <Button type="link" className="px-2">
+                    <DeleteOutlined className="text-lg text-red-500" />
+                  </Button>
+                </Popconfirm>
+              </Tooltip>
+            )}
+          </div>
         </div>
+        {mute && (
+          <Tag className="flex place-self-end text-xs mr-6" color="red">
+            Thông báo đã bị tắt
+          </Tag>
+        )}
       </div>
     )
-  }, [chatConnection, countNotification, state.roles])
+  }, [chatConnection, countNotification, state.roles, mute])
 
   return (
     <>
@@ -290,7 +361,7 @@ export default function Header({ collapsed, toggleCollapsed }) {
               <Badge count={countNotification} className="select-none border rounded-lg">
                 <Popover
                   placement="left"
-                  content={<div className="w-80 line-clamp-2">{newNotification.message}</div>}
+                  content={<div className="max-w-80 line-clamp-2">{newNotification.message}</div>}
                   trigger="click"
                   open={newNotification.show}
                 >
@@ -306,12 +377,18 @@ export default function Header({ collapsed, toggleCollapsed }) {
 
             <Link to="/message">
               <Badge count={countConversation} className="select-none border rounded-lg">
-                <Avatar
-                  className="bg-white hover:bg-gray-200 cursor-pointer"
-                  icon={<MessageTwoTone />}
-                  shape="square"
-                  size="large"
-                />
+                <Popover
+                  content={<div className="max-w-80 line-clamp-2">{newMessage.message}</div>}
+                  trigger="click"
+                  open={newMessage.show}
+                >
+                  <Avatar
+                    className="bg-white hover:bg-gray-200 cursor-pointer"
+                    icon={<MessageTwoTone />}
+                    shape="square"
+                    size="large"
+                  />
+                </Popover>
               </Badge>
             </Link>
             <div onClick={toggleDarkMode} className="select-none border rounded-lg">

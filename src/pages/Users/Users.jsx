@@ -270,7 +270,7 @@ export default function Users() {
   }
 
   const onCreateOrUpdateUser = async (values) => {
-    console.log(values)
+    // console.log(values)
     try {
       if (userId) {
         const user = await httpService.put(`${ACCOUNT_API}/${userId}`, values)

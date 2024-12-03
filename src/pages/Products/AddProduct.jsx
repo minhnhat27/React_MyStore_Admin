@@ -185,7 +185,7 @@ export default function AddProduct() {
       setSaveLoading(true)
 
       const formData = new FormData()
-      fileList.forEach((item) => formData.append('images', item.originFileObj))
+      fileList.reverse().forEach((item) => formData.append('images', item.originFileObj))
 
       const data = {
         ...values,
@@ -256,6 +256,7 @@ export default function AddProduct() {
                   className="w-full"
                   size="large"
                   optionFilterProp="label"
+                  showSearch
                   placeholder="Chọn"
                   options={productAttributes.brands}
                 />
@@ -270,6 +271,7 @@ export default function AddProduct() {
                   className="w-full"
                   size="large"
                   optionFilterProp="label"
+                  showSearch
                   placeholder="Chọn"
                   options={productAttributes.categories}
                 />
@@ -472,6 +474,7 @@ export default function AddProduct() {
                 autoClearSearchValue
                 mode="multiple"
                 disabled={
+                  saveLoading ||
                   colors.length <= 0 ||
                   colors.some((color) => color === undefined || !color?.colorName)
                 }
@@ -536,6 +539,13 @@ export default function AddProduct() {
                 htmlType="submit"
                 className="w-full"
                 size="large"
+                onClick={() =>
+                  form.validateFields().catch((errorInfo) => {
+                    const firstErrorField =
+                      errorInfo.errorFields?.[0]?.errors?.[0] || 'Vui lòng điền đầy đủ thông tin'
+                    message.error(firstErrorField)
+                  })
+                }
               >
                 {saveLoading ? <Spin /> : 'Thêm'}
               </Button>

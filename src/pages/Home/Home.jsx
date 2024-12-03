@@ -1,8 +1,18 @@
-import { App, Button, Card, Divider, Form, Image, Skeleton, Statistic, Upload } from 'antd'
+import {
+  App,
+  Button,
+  Card,
+  DatePicker,
+  Divider,
+  Form,
+  Image,
+  Skeleton,
+  Statistic,
+  Upload,
+} from 'antd'
 import {
   ArrowDownOutlined,
   ArrowUpOutlined,
-  ExclamationCircleTwoTone,
   IdcardTwoTone,
   PieChartTwoTone,
   PlusOutlined,
@@ -13,6 +23,11 @@ import { DualAxes } from '@ant-design/charts'
 import { HOME_API, STATISTICS_API } from '../../services/const'
 import { useEffect, useMemo, useState } from 'react'
 import httpService from '../../services/http-service'
+import dayjs from 'dayjs'
+
+const disabledDate = (current) => {
+  return current && current > dayjs().endOf('day')
+}
 
 export default function Home() {
   const [form] = Form.useForm()
@@ -22,10 +37,14 @@ export default function Home() {
   const [general, setGeneral] = useState()
   const { message } = App.useApp()
 
+  const [revenueToday, setRevenueToday] = useState({ revenue: 0, totalOrders: 0 })
   const [revenueThisYear, setRevenueThisYear] = useState([])
   const [revenueThisMonth, setRevenueThisMonth] = useState({})
   const [revenuePrevMonth, setRevenuePrevMonth] = useState({})
   const [total, setTotal] = useState(0)
+
+  const [thisMonth, setThisMonth] = useState(dayjs())
+  const [thisYear, setThisYear] = useState(dayjs())
 
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewImage, setPreviewImage] = useState('')
@@ -44,8 +63,8 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const year = new Date().getFullYear()
-        const data = await httpService.get(`${STATISTICS_API}/revenue/${year}`)
+        // const year = new Date().getFullYear()
+        const data = await httpService.get(`${STATISTICS_API}/revenue/${thisYear.year()}`)
         const updatedData = data.statistics.map((item) => ({
           month: item.month,
           'Doanh thu': item.revenue,
@@ -59,39 +78,28 @@ export default function Home() {
       }
     }
     fetchData()
-  }, [])
+  }, [thisYear])
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setMonthLoading(true)
-        const year = new Date().getFullYear()
-        const month = new Date().getMonth() + 1
-        const data = await httpService.get(`${STATISTICS_API}/revenue/${year}/${month}`)
-        setRevenueThisMonth(data)
-      } catch (error) {
-        console.log(error)
-      } finally {
-        setMonthLoading(false)
-      }
-    }
-    fetchData()
-  }, [])
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setMonthLoading(true)
-        const year = new Date().getFullYear()
-
-        const date = new Date()
-        const previousMonth = new Date(date.getTime())
+        const previousMonth = new Date(thisMonth.toDate().getTime())
         previousMonth.setDate(0)
 
-        const data = await httpService.get(
-          `${STATISTICS_API}/revenue/${year}/${previousMonth.getMonth() + 1}`,
+        const data1 = await httpService.get(
+          `${STATISTICS_API}/revenue/${thisMonth.year()}/${thisMonth.month() + 1}`,
         )
-        setRevenuePrevMonth(data)
+        const data2 = await httpService.get(
+          `${STATISTICS_API}/revenue/${previousMonth.getFullYear()}/${
+            previousMonth.getMonth() + 1
+          }`,
+        )
+
+        const [thisData, prevData] = await Promise.all([data1, data2])
+
+        setRevenueThisMonth(thisData)
+        setRevenuePrevMonth(prevData)
       } catch (error) {
         console.log(error)
       } finally {
@@ -99,14 +107,37 @@ export default function Home() {
       }
     }
     fetchData()
-  }, [])
+  }, [thisMonth])
+
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       setMonthLoading(true)
+  //       const year = thisMonth.year()
+  //       const previousMonth = new Date(thisMonth.toDate().getTime())
+  //       previousMonth.setDate(0)
+
+  //       const data = await httpService.get(
+  //         `${STATISTICS_API}/revenue/${year}/${previousMonth.getMonth() + 1}`,
+  //       )
+  //       setRevenuePrevMonth(data)
+  //     } catch (error) {
+  //       console.log(error)
+  //     } finally {
+  //       setMonthLoading(false)
+  //     }
+  //   }
+  //   fetchData()
+  // }, [thisMonth])
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true)
         const data = await httpService.get(`${STATISTICS_API}/general`)
+        const today = await httpService.get(`${STATISTICS_API}/revenue/today`)
         setGeneral(data)
+        setRevenueToday(today)
       } catch (error) {
       } finally {
         setLoading(false)
@@ -191,11 +222,11 @@ export default function Home() {
   }
 
   const beforeUpload = (file) => {
-    const isLt1MB = file.size / 1024 / 1024 >= 1
-    if (!isLt1MB) {
-      message.error('Ảnh phải từ 1MB trở lên!')
-      return Upload.LIST_IGNORE
-    }
+    // const isLt1MB = file.size / 1024 / 1024 >= 1
+    // if (!isLt1MB) {
+    //   message.error('Ảnh phải từ 1MB trở lên!')
+    //   return Upload.LIST_IGNORE
+    // }
     return false
   }
 
@@ -218,48 +249,89 @@ export default function Home() {
 
   return (
     <div className="py-2 md:p-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-        <Card loading={loading} className="drop-shadow rounded-sm" bordered={false}>
-          <Statistic
-            title="Tổng đơn hàng"
-            value={general?.totalOrders ?? 0}
-            precision={0}
-            prefix={<PieChartTwoTone className="text-4xl" />}
-          />
-        </Card>
-        <Card loading={loading} className="drop-shadow rounded-sm" bordered={false}>
-          <Statistic
-            title="Sản phẩm"
-            value={general?.totalProducts ?? 0}
-            precision={0}
-            prefix={<ShopTwoTone className="text-4xl" />}
-          />
-        </Card>
-        <Card loading={loading} className="drop-shadow rounded-sm" bordered={false}>
-          <Statistic
-            title="Người dùng"
-            value={general?.totalProducts ?? 0}
-            precision={0}
-            prefix={<IdcardTwoTone className="text-4xl" />}
-          />
-        </Card>
-        <Card loading={loading} className="drop-shadow rounded-sm" bordered={false}>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
+        <div className="lg:col-span-2">
+          <Divider plain className="col-span-full" style={{ margin: '0.5rem 0' }}>
+            Hôm nay
+          </Divider>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
+            <Card loading={loading} className="drop-shadow rounded-sm" bordered={false}>
+              <Statistic
+                title="Đơn hàng"
+                value={revenueToday.totalOrders ?? 0}
+                precision={0}
+                // prefix={<ExclamationCircleTwoTone className="text-4xl" />}
+                valueStyle={{ color: 'red' }}
+              />
+            </Card>
+            <Card loading={loading} className="drop-shadow rounded-sm" bordered={false}>
+              <Statistic
+                title="Doanh thu"
+                value={formatVND.format(revenueToday.revenue)}
+                precision={0}
+                // prefix={<ExclamationCircleTwoTone className="text-4xl" />}
+                valueStyle={{ color: 'red' }}
+              />
+            </Card>
+          </div>
+        </div>
+
+        <div className="lg:col-span-3">
+          <Divider plain className="col-span-full" style={{ margin: '0.5rem 0' }}>
+            Doanh số
+          </Divider>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
+            <Card loading={loading} className="drop-shadow rounded-sm" bordered={false}>
+              <Statistic
+                title="Tổng đơn hàng"
+                value={general?.totalOrders ?? 0}
+                precision={0}
+                prefix={<PieChartTwoTone className="text-4xl" />}
+              />
+            </Card>
+            <Card loading={loading} className="drop-shadow rounded-sm" bordered={false}>
+              <Statistic
+                title="Sản phẩm"
+                value={general?.totalProducts ?? 0}
+                precision={0}
+                prefix={<ShopTwoTone className="text-4xl" />}
+              />
+            </Card>
+            <Card loading={loading} className="drop-shadow rounded-sm" bordered={false}>
+              <Statistic
+                title="Người dùng"
+                value={general?.totalUsers ?? 0}
+                precision={0}
+                prefix={<IdcardTwoTone className="text-4xl" />}
+              />
+            </Card>
+          </div>
+        </div>
+
+        {/* <Card loading={loading} className="drop-shadow rounded-sm" bordered={false}>
           <Statistic
             title="Đơn bị hủy"
             value={general?.totalCanceledOrders ?? 0}
             precision={0}
             prefix={<ExclamationCircleTwoTone className="text-4xl" />}
           />
-        </Card>
+        </Card> */}
       </div>
       <Divider plain style={{ fontSize: 18 }}>
-        Doanh thu năm {new Date().getFullYear()}
+        Doanh thu năm{' '}
+        <DatePicker
+          disabledDate={disabledDate}
+          className="w-24"
+          defaultValue={thisYear}
+          picker="year"
+          onChange={setThisYear}
+        />
       </Divider>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
         <div className="md:col-span-3 h-72 md:h-[50vh] flex-1">
           <DualAxes {...configDualAxes} />
         </div>
-        <Card className="self-center shadow-lg rounded-sm h-fit" bordered={false}>
+        <Card className="self-center m-1 shadow-lg rounded-sm h-fit" bordered={false}>
           <Statistic
             title="Tổng doanh thu"
             value={formatVND.format(total)}
@@ -268,8 +340,17 @@ export default function Home() {
         </Card>
       </div>
       <Divider plain style={{ fontSize: 18 }}>
-        Thống kê tháng {new Date().getMonth() + 1}
+        Thống kê tháng{' '}
+        <DatePicker
+          disabledDate={disabledDate}
+          format={'MM-YYYY'}
+          className="w-24"
+          defaultValue={thisMonth}
+          picker="month"
+          onChange={setThisMonth}
+        />
       </Divider>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
         <Card loading={monthLoading} className="shadow-lg rounded-sm" bordered={false}>
           <Statistic
@@ -300,7 +381,7 @@ export default function Home() {
                 {(totalOrdersComparedToLastMonth > 0 ? 'Tăng ' : 'Giảm ') +
                   Math.abs(
                     (revenueComparedToLastMonth /
-                      (revenuePrevMonth.revenue || revenueComparedToLastMonth)) *
+                      (revenuePrevMonth.revenue || revenueComparedToLastMonth || 1)) *
                       100,
                   ).toFixed(0) +
                   '% so với tháng trước'}

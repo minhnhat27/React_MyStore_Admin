@@ -90,7 +90,7 @@ const columns = (
     dataIndex: 'paymentMethodName',
     align: 'center',
     filters: paymentMethods,
-    onFilter: (value, record) => record.paymentMethod === value,
+    onFilter: (value, record) => record.paymentMethodName === value,
   },
   {
     title: 'Ngày đặt',
@@ -149,7 +149,12 @@ const columns = (
     width: 100,
     render: (value, record) => (
       <>
-        {value === ProcessingStatus ? (
+        {value === ConfirmedStatus && (
+          <Button onClick={() => onOpenSendOrder(record.id)} type="primary" danger>
+            Giao đơn
+          </Button>
+        )}
+        {(value === ProcessingStatus || value === ConfirmedStatus) && (
           <Popconfirm
             title="Xác nhận hủy đơn!"
             loading={loading}
@@ -159,12 +164,6 @@ const columns = (
               Hủy đơn
             </Button>
           </Popconfirm>
-        ) : (
-          value === ConfirmedStatus && (
-            <Button onClick={() => onOpenSendOrder(record.id)} type="dashed" danger>
-              Giao đơn
-            </Button>
-          )
         )}
       </>
     ),
@@ -247,6 +246,7 @@ export default function Orders() {
     try {
       setOrderLoading(true)
       const data = await httpService.get(ORDER_API + `/${id}`)
+      console.log(data)
       setOrderDetails(data)
     } catch (error) {
       message.error(showError(error))
@@ -307,7 +307,7 @@ export default function Orders() {
       <div className="pb-4">
         <Breadcrumb className="py-2" items={breadcrumbItems} />
         <div className="py-2 px-4 space-y-2 bg-white rounded-lg drop-shadow">
-          <div className="flex space-x-2 py-4">
+          <div className="py-4">
             <Input.Search
               size="large"
               allowClear
@@ -316,9 +316,6 @@ export default function Orders() {
               onSearch={(key) => handleSearch(key)}
               onChange={(e) => e.target.value === '' && setSearchKey('')}
             />
-            <Button size="large" type="primary">
-              Xuất đơn hàng
-            </Button>
           </div>
           <Tabs
             tabBarStyle={{ margin: 0 }}
@@ -485,6 +482,9 @@ export default function Orders() {
       >
         {orderDetails && (
           <>
+            {orderDetails.shippingCode && (
+              <div className="py-1">Mã vận đơn: {orderDetails.shippingCode}</div>
+            )}
             <div className="flex items-center gap-1">
               <CompassOutlined className="text-xl text-red-600" />
               <div className="font-bold inline-block truncate">{orderDetails.receiver}</div>
@@ -495,8 +495,8 @@ export default function Orders() {
               itemLayout="vertical"
               size="large"
               dataSource={orderDetails.productOrderDetails}
-              renderItem={(item) => (
-                <List.Item style={{ padding: 0 }} key={item.productName}>
+              renderItem={(item, i) => (
+                <List.Item style={{ padding: 0 }} key={i}>
                   <List.Item.Meta
                     avatar={
                       <Image
@@ -512,9 +512,11 @@ export default function Orders() {
                       <>
                         <div>
                           {item.quantity} x {formatVND.format(item.price)}{' '}
-                          <span className="line-through text-xs">
-                            {formatVND.format(item.originPrice)}
-                          </span>
+                          {item.price < item.originPrice && (
+                            <span className="line-through text-xs">
+                              {formatVND.format(item.originPrice)}
+                            </span>
+                          )}
                         </div>
                         <div>Thành tiền: {formatVND.format(item.price * item.quantity)}</div>
                         <div className="text-gray-500 font-semibold">Phân loại: {item.variant}</div>
