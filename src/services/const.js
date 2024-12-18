@@ -38,29 +38,39 @@ export const UserRole = 'User'
 export const AdminRole = 'Admin'
 export const EmployeeRole = 'Employee'
 
+// export const OrderStatus = {
+//   0: 'Đang xử lý',
+//   1: 'Đã xác nhận',
+//   2: 'Chờ lấy hàng',
+//   3: 'Đang vận chuyển',
+//   4: 'Đang giao hàng',
+//   5: 'Đã nhận hàng',
+//   6: 'Đã hủy',
+//   7: 'Tất cả',
+// }
+
 export const OrderStatus = {
   0: 'Đang xử lý',
   1: 'Đã xác nhận',
-  2: 'Chờ lấy hàng',
-  3: 'Đang vận chuyển',
-  4: 'Đang giao hàng',
-  5: 'Đã nhận hàng',
-  6: 'Đã hủy',
-  7: 'Tất cả',
+  2: 'Đang vận chuyển',
+  3: 'Đã nhận hàng',
+  4: 'Đã hủy',
+  5: 'Tất cả',
 }
 
 export const ProcessingStatus = 0
 export const ConfirmedStatus = 1
-
-export const CancelStatus = 6
-export const ReceivedStatus = 5
+export const ShippingStatus = 2
+export const ReceivedStatus = 3
+export const CancelStatus = 4
+export const AllStatus = 5
 
 export const OrderStatusTagColor = {
   0: '#eab308',
   1: '#3b82f6',
-  2: '#14b8a6',
-  3: '#a855f7',
-  4: '#f97316',
-  5: '#22c55e',
-  6: '#f43f5e', //"#ef4444"
+  // 2: '#14b8a6',
+  2: '#a855f7',
+  // 4: '#f97316',
+  3: '#22c55e',
+  4: '#f43f5e', //"#ef4444"
 }

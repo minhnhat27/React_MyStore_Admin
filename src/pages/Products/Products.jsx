@@ -21,7 +21,6 @@ import {
 import {
   formatDateTime,
   formatVND,
-  gender,
   showError,
   toImageSrc,
   toTextValue,
@@ -73,6 +72,7 @@ const columns = (
     title: 'ID',
     dataIndex: 'id',
     render: (value) => <span className="font-semibold">#{value}</span>,
+    fixed: 'left',
   },
   {
     title: 'Ảnh đại diện',
@@ -100,47 +100,57 @@ const columns = (
       ),
   },
   {
-    title: 'Tên',
+    title: 'Tên sản phẩm',
     dataIndex: 'name',
     render: (value) => <div className="w-24 md:w-32 2xl:w-full line-clamp-2">{value}</div>,
     sorter: (a, b) => a.name.localeCompare(b.name),
     width: 100,
-    fixed: 'left',
   },
   {
-    title: 'Giá',
+    title: 'Giá bán',
     dataIndex: 'price',
-    render: (value) => formatVND.format(value),
-    sorter: (a, b) => a.price - b.price,
+    render: (value, record) => (
+      <span className="font-semibold">
+        {formatVND.format(value - value * (record.discountPercent / 100.0))}
+      </span>
+    ),
+    // sorter: (a, b) => a.price - b.price,
   },
   {
     title: (
-      <div>
+      <>
         <Rate disabled value={1} count={1} /> Đánh giá
-      </div>
+      </>
     ),
     dataIndex: 'rating',
     align: 'center',
+    width: 50,
     render: (value, record) => (
       <>
-        <div className="flex items-center justify-center gap-2">
-          {value}
-          <Button onClick={() => onOpenReview(record.id)} type="text" className="px-2">
-            <EyeTwoTone className="text-lg" />
-          </Button>
-        </div>
-        <div className="text-xs">{record.ratingCount} lượt đánh giá</div>
+        {record.ratingCount > 0 ? (
+          <>
+            <div className="flex items-center justify-center gap-2">
+              {value}
+              <Button onClick={() => onOpenReview(record.id)} type="text" className="px-2">
+                <EyeTwoTone className="text-lg" />
+              </Button>
+            </div>
+            <div className="text-xs">{record.ratingCount} lượt đánh giá</div>
+          </>
+        ) : (
+          <div className="text-xs">Chưa có đánh giá</div>
+        )}
       </>
     ),
   },
-  {
-    title: 'Giới tính',
-    dataIndex: 'gender',
-    align: 'center',
-    filters: gender.map((item) => ({ value: item.value, text: item.label })),
-    render: (value) => gender.find((e) => e.value === value)?.label,
-    onFilter: (value, record) => record.gender === value,
-  },
+  // {
+  //   title: 'Giới tính',
+  //   dataIndex: 'gender',
+  //   align: 'center',
+  //   filters: gender.map((item) => ({ value: item.value, text: item.label })),
+  //   render: (value) => gender.find((e) => e.value === value)?.label,
+  //   onFilter: (value, record) => record.gender === value,
+  // },
   {
     title: 'Thương hiệu',
     dataIndex: 'brandName',
@@ -446,7 +456,6 @@ export default function Products() {
           />
 
           <Pagination
-            hideOnSinglePage
             className="py-4"
             align="center"
             total={totalItems}

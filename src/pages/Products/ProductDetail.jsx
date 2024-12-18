@@ -215,12 +215,11 @@ export default function ProductDetail() {
       const formData = new FormData()
 
       fileList
-        .reverse()
-        .forEach((item, i) =>
-          item.originFileObj
-            ? formData.append(`images`, item.originFileObj)
-            : formData.append(`imageUrls[${i}]`, item.originUrl),
-        )
+        .filter((e) => e.originFileObj)
+        .forEach((item) => formData.append(`images`, item.originFileObj))
+      fileList
+        .filter((e) => e.originUrl)
+        .forEach((item, i) => formData.append(`imageUrls[${i}]`, item.originUrl))
 
       const data = {
         ...values,

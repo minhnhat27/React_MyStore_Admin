@@ -29,6 +29,7 @@ import {
 import { CompassOutlined, EyeTwoTone, HomeFilled } from '@ant-design/icons'
 import httpService from '../../services/http-service'
 import {
+  AllStatus,
   CancelStatus,
   ConfirmedStatus,
   ORDER_API,
@@ -37,6 +38,7 @@ import {
   ProcessingStatus,
   ReceivedStatus,
   RequiredNote,
+  ShippingStatus,
 } from '../../services/const'
 
 const breadcrumbItems = [
@@ -154,7 +156,7 @@ const columns = (
             Giao đơn
           </Button>
         )}
-        {(value === ProcessingStatus || value === ConfirmedStatus) && (
+        {(value === ProcessingStatus || value === ConfirmedStatus || value === ShippingStatus) && (
           <Popconfirm
             title="Xác nhận hủy đơn!"
             loading={loading}
@@ -200,7 +202,7 @@ export default function Orders() {
         if (searchKey) setSearchLoading(true)
 
         const params =
-          orderStatus === '7'
+          orderStatus === AllStatus.toString()
             ? { page, pageSize, key: searchKey }
             : { page, pageSize, key: searchKey, orderStatus }
 
@@ -345,7 +347,6 @@ export default function Orders() {
           />
 
           <Pagination
-            hideOnSinglePage
             className="py-4"
             align="center"
             total={totalItems}
@@ -380,6 +381,10 @@ export default function Orders() {
             clearOnDestroy
             initialValues={{
               requiredNote: 0,
+              weight: 10,
+              height: 10,
+              width: 10,
+              length: 10,
             }}
             onFinish={sendOrder}
           >
@@ -475,6 +480,12 @@ export default function Orders() {
                 <span className="text-lg font-semibold">
                   {formatVND.format(orderDetails.total)}
                 </span>
+                {orderDetails.paymentTranId && (
+                  <div>
+                    Mã giao dịch:{' '}
+                    <span className="text-gray-600 font-medium">{orderDetails.paymentTranId}</span>
+                  </div>
+                )}
               </div>
             </>
           )

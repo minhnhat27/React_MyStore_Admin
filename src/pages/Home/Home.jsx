@@ -1,11 +1,13 @@
 import {
   App,
+  Badge,
   Button,
   Card,
   DatePicker,
   Divider,
   Form,
   Image,
+  Select,
   Skeleton,
   Statistic,
   Upload,
@@ -24,16 +26,17 @@ import { HOME_API, STATISTICS_API } from '../../services/const'
 import { useEffect, useMemo, useState } from 'react'
 import httpService from '../../services/http-service'
 import dayjs from 'dayjs'
+import quarterOfYear from 'dayjs/plugin/quarterOfYear'
+dayjs.extend(quarterOfYear)
 
-const disabledDate = (current) => {
-  return current && current > dayjs().endOf('day')
-}
+const disabledDate = (current) => current && current > dayjs().endOf('day')
 
 export default function Home() {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [imageLoading, setImageLoading] = useState(false)
   const [monthLoading, setMonthLoading] = useState(false)
+  const [bestSellingLoading, setBestSellingLoading] = useState(false)
   const [general, setGeneral] = useState()
   const { message } = App.useApp()
 
@@ -42,6 +45,11 @@ export default function Home() {
   const [revenueThisMonth, setRevenueThisMonth] = useState({})
   const [revenuePrevMonth, setRevenuePrevMonth] = useState({})
   const [total, setTotal] = useState(0)
+
+  const [bestSelling, setBestSelling] = useState([])
+  const [bestSellingType, setBestSellingType] = useState(0)
+  const [bestSellingQuarter, setBestSellingQuarter] = useState(dayjs())
+  const [bestSellingMonth, setBestSellingMonth] = useState(dayjs())
 
   const [thisMonth, setThisMonth] = useState(dayjs())
   const [thisYear, setThisYear] = useState(dayjs())
@@ -163,6 +171,30 @@ export default function Home() {
     }
     fetchData()
   }, [])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setBestSellingLoading(true)
+        let data = []
+        if (bestSellingType) {
+          const year = bestSellingQuarter.year()
+          const quarter = bestSellingQuarter.quarter()
+          data = await httpService.get(`${STATISTICS_API}/best-selling/quarter/${year}/${quarter}`)
+        } else {
+          const month = bestSellingMonth.month() + 1
+          const year = bestSellingMonth.year()
+          data = await httpService.get(`${STATISTICS_API}/best-selling/month/${year}/${month}`)
+        }
+        setBestSelling(data)
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setBestSellingLoading(false)
+      }
+    }
+    fetchData()
+  }, [bestSellingType, bestSellingMonth, bestSellingQuarter])
 
   const configDualAxes = {
     xField: 'month',
@@ -324,7 +356,7 @@ export default function Home() {
           className="w-24"
           defaultValue={thisYear}
           picker="year"
-          onChange={setThisYear}
+          onChange={(e) => e && setThisYear(e)}
         />
       </Divider>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
@@ -347,7 +379,7 @@ export default function Home() {
           className="w-24"
           defaultValue={thisMonth}
           picker="month"
-          onChange={setThisMonth}
+          onChange={(e) => e && setThisMonth(e)}
         />
       </Divider>
 
@@ -378,7 +410,7 @@ export default function Home() {
             prefix={revenueComparedToLastMonth > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
             suffix={
               <div className="text-sm">
-                {(totalOrdersComparedToLastMonth > 0 ? 'Tăng ' : 'Giảm ') +
+                {(revenueComparedToLastMonth > 0 ? 'Tăng ' : 'Giảm ') +
                   Math.abs(
                     (revenueComparedToLastMonth /
                       (revenuePrevMonth.revenue || revenueComparedToLastMonth || 1)) *
@@ -401,7 +433,7 @@ export default function Home() {
           onFinish={handleChangeBanner}
         >
           {imageLoading ? (
-            [...new Array(10)].map((_, i) => <Skeleton.Image className="m-1" key={i} active />)
+            [...new Array(8)].map((_, i) => <Skeleton.Image className="m-1" key={i} active />)
           ) : (
             <Form.Item
               getValueFromEvent={(e) => e.fileList}
@@ -444,6 +476,91 @@ export default function Home() {
             </Form.Item>
           )}
         </Form>
+      </div>
+      <div>
+        <Divider style={{ fontSize: 20 }} className="text-wrap">
+          <div className="flex flex-wrap md:flex-nowrap gap-2 justify-center">
+            <span>Top sản phẩm bán chạy</span>
+            <div>
+              <Select
+                className="w-24 m-1"
+                value={bestSellingType}
+                options={[
+                  { label: 'Tháng', value: 0 },
+                  { label: 'Quý', value: 1 },
+                ]}
+                onChange={setBestSellingType}
+              />
+              {bestSellingType ? (
+                <DatePicker
+                  value={bestSellingQuarter}
+                  onChange={setBestSellingQuarter}
+                  className="w-32 m-1"
+                  picker="quarter"
+                  disabledDate={(current) => current && current.year() > dayjs().year()}
+                />
+              ) : (
+                <DatePicker
+                  disabledDate={disabledDate}
+                  value={bestSellingMonth}
+                  onChange={setBestSellingMonth}
+                  className="w-32 m-1"
+                  picker="month"
+                />
+              )}
+            </div>
+          </div>
+        </Divider>
+
+        {bestSellingLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-8">
+            {[
+              ...new Array(5).map((_, i) => (
+                <Card
+                  key={i}
+                  cover={<Skeleton.Image style={{ width: '100%', height: '15rem' }} active />}
+                  loading
+                />
+              )),
+            ]}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-8">
+            {bestSelling.map((product, i) => (
+              <Badge.Ribbon
+                key={i}
+                color="#0ea5e9"
+                placement="start"
+                text={`${product.sold} đã bán`}
+              >
+                <Card
+                  hoverable
+                  styles={{
+                    body: { padding: '0.75rem' },
+                  }}
+                  classNames={{ cover: `h-48 xs:h-56 md:h-64` }}
+                  cover={
+                    <img
+                      src={toImageSrc(product.imageUrl)}
+                      alt="Product"
+                      className="w-full h-full object-cover"
+                    />
+                  }
+                >
+                  <div className="line-clamp-2 min-h-11 text-sm sm:text-base">
+                    {product.id ? (
+                      <>
+                        <span className="font-semibold">#{product.id} -</span> {product.name}
+                      </>
+                    ) : (
+                      product.name
+                    )}
+                  </div>
+                </Card>
+              </Badge.Ribbon>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

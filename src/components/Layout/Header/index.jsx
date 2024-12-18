@@ -62,6 +62,7 @@ export default function Header({ collapsed, toggleCollapsed }) {
     message: undefined,
     timeoutId: undefined,
     image: undefined,
+    id: undefined,
   })
 
   const [hasRegistered, setHasRegistered] = useState(false)
@@ -110,15 +111,16 @@ export default function Header({ collapsed, toggleCollapsed }) {
               //   key,
               // })
               setNewMessage((prev) => {
-                const timout = setTimeout(
+                const timeoutId = setTimeout(
                   () => setNewMessage((prev) => ({ ...prev, show: false })),
-                  3000,
+                  5000,
                 )
                 if (prev.show) clearTimeout(prev.timeoutId)
                 return {
+                  id,
                   show: true,
-                  message: message,
-                  timeoutId: timout,
+                  message,
+                  timeoutId,
                   image: image ? true : undefined,
                 }
               })
@@ -131,12 +133,12 @@ export default function Header({ collapsed, toggleCollapsed }) {
           setMute((prev) => {
             if (!prev) {
               setNewNotification((prev) => {
-                const timout = setTimeout(
+                const timeoutId = setTimeout(
                   () => setNewNotification((prev) => ({ ...prev, show: false })),
-                  3000,
+                  5000,
                 )
                 if (prev.show) clearTimeout(prev.timeoutId)
-                return { show: true, message: notification.message, timeoutId: timout }
+                return { show: true, message: notification.message, timeoutId }
               })
             }
             return prev
@@ -231,20 +233,21 @@ export default function Header({ collapsed, toggleCollapsed }) {
           className="w-80 max-h-[65vh] overflow-y-auto"
           size="large"
           dataSource={notifications}
-          renderItem={(item) =>
-            !item.isRead ? (
-              <List.Item
-                onClick={() => !item.isRead && onReadNotification(item.id)}
-                className="cursor-pointer bg-slate-100"
-                style={{ padding: '0.5rem 0 0.5rem 1rem' }}
-              >
-                <Badge dot>
-                  <div className="text-sm">{item.message}</div>
-                  <div className="text-[0.65rem] mt-2 text-gray-500">
-                    {formatDateTime(item.createdAt)}
-                  </div>
-                </Badge>
-                {/* <Tooltip title="Xóa thông báo">
+          renderItem={(item) => (
+            <Link to="/orders-management">
+              {!item.isRead ? (
+                <List.Item
+                  onClick={() => !item.isRead && onReadNotification(item.id)}
+                  className="cursor-pointer bg-slate-100"
+                  style={{ padding: '0.5rem 0 0.5rem 1rem' }}
+                >
+                  <Badge dot>
+                    <div className="text-sm">{item.message}</div>
+                    <div className="text-[0.65rem] mt-2 text-gray-500">
+                      {formatDateTime(item.createdAt)}
+                    </div>
+                  </Badge>
+                  {/* <Tooltip title="Xóa thông báo">
                   <Popconfirm
                     title="Xác nhận xóa thông báo"
                     onConfirm={() => onDeleteNotification(item.id, item.isRead)}
@@ -252,26 +255,29 @@ export default function Header({ collapsed, toggleCollapsed }) {
                     <Button type="link">Xóa</Button>
                   </Popconfirm>
                 </Tooltip> */}
-              </List.Item>
-            ) : (
-              <List.Item className="cursor-pointer" style={{ padding: '0.5rem 0 0.5rem 1rem' }}>
-                <div>
-                  <div>{item.message}</div>
-                  <div className="text-[0.65rem] mt-2 text-gray-500">
-                    {formatDateTime(item.createdAt)}
+                </List.Item>
+              ) : (
+                <List.Item className="cursor-pointer" style={{ padding: '0.5rem 0 0.5rem 1rem' }}>
+                  <div>
+                    <div>{item.message}</div>
+                    <div className="text-[0.65rem] mt-2 text-gray-500">
+                      {formatDateTime(item.createdAt)}
+                    </div>
                   </div>
-                </div>
-                {state.roles?.includes(AdminRole) && (
-                  <Popconfirm
-                    title="Xác nhận xóa thông báo"
-                    onConfirm={() => onDeleteNotification(item.id, item.isRead)}
-                  >
-                    <Button type="link">Xóa</Button>
-                  </Popconfirm>
-                )}
-              </List.Item>
-            )
-          }
+                  {state.roles?.includes(AdminRole) && (
+                    <Popconfirm
+                      title="Xác nhận xóa thông báo"
+                      onConfirm={() => onDeleteNotification(item.id, item.isRead)}
+                    >
+                      <Button onClick={(e) => e.preventDefault()} type="link">
+                        Xóa
+                      </Button>
+                    </Popconfirm>
+                  )}
+                </List.Item>
+              )}
+            </Link>
+          )}
         />
       </ConfigProvider>
     )
@@ -344,9 +350,9 @@ export default function Header({ collapsed, toggleCollapsed }) {
   return (
     <>
       <nav className="bg-slate-100 shadow sticky top-0 z-20 dark:border-black dark:bg-black">
-        <div className="px-2 h-20 flex justify-end md:justify-between flex-nowrap items-center">
+        <div className="px-2 h-20 flex justify-between flex-nowrap items-center">
           <div
-            className="hidden md:block border py-1 px-3 rounded-md text-base cursor-pointer dark:text-slate-300"
+            className="border py-1 px-3 rounded-md text-base cursor-pointer dark:text-slate-300"
             onClick={toggleCollapsed}
           >
             {sessionStorage.getItem('collapsed') === 'true' || collapsed ? (
@@ -374,11 +380,31 @@ export default function Header({ collapsed, toggleCollapsed }) {
                 </Popover>
               </Badge>
             </Popover>
-
             <Link to="/message">
               <Badge count={countConversation} className="select-none border rounded-lg">
                 <Popover
-                  content={<div className="max-w-80 line-clamp-2">{newMessage.message}</div>}
+                  content={
+                    <>
+                      <div className="max-w-80 line-clamp-2">
+                        {newMessage.message}
+                        <Link
+                          onClick={() =>
+                            setNewMessage((prev) => ({
+                              ...prev,
+                              show: false,
+                              id: undefined,
+                            }))
+                          }
+                          to={`/message?id=${newMessage.id}`}
+                        >
+                          <Button type="link" className="p-0 pl-4">
+                            Xem
+                          </Button>
+                        </Link>
+                      </div>
+                      {newMessage.image && <div className="text-xs italic">Kèm hình ảnh</div>}
+                    </>
+                  }
                   trigger="click"
                   open={newMessage.show}
                 >

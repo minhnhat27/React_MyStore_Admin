@@ -46,17 +46,20 @@ const columns = (handleDeleteVoucher, onUpdateGlobal, onOpenUserVoucher) => [
   {
     title: 'Số tiền giảm',
     dataIndex: 'discountAmount',
+    align: 'center',
     render: (value, record) => (value ? formatVND.format(value) : `${record.discountPercent}%`),
   },
   {
     title: 'Đơn tối thiểu',
     dataIndex: 'minOrder',
+    align: 'center',
     render: (value) => formatVND.format(value),
   },
   {
     title: 'Giảm tối đa',
     dataIndex: 'maxDiscount',
-    render: (value) => formatVND.format(value),
+    align: 'center',
+    render: (value, record) => (record.discountPercent ? formatVND.format(value) : '_'),
   },
   {
     title: 'Ngày hiệu lực',
@@ -116,7 +119,7 @@ export default function Vouchers() {
   const [createLoading, setCreateLoading] = useState(false)
   const [getUserLoading, setGetUserLoading] = useState(false)
 
-  const [code, setCode] = useState('')
+  const [code, setCode] = useState()
   const [voucher, setVoucher] = useState([])
 
   const [userVoucher, setUserVoucher] = useState([])
@@ -205,7 +208,7 @@ export default function Vouchers() {
       setCreateLoading(true)
       const data = await httpService.put(`${VOUCHER_API}/user/${code}`, values)
       setHaveVoucher(data)
-      setCode('')
+      setCode(undefined)
       message.success('Cập nhật thành công')
       setOpenUserVoucher(false)
     } catch (error) {
@@ -214,6 +217,10 @@ export default function Vouchers() {
       setCreateLoading(false)
     }
   }
+
+  useEffect(() => {
+    form.setFieldsValue({ haveVoucher })
+  }, [haveVoucher, form])
 
   return (
     <>
@@ -382,8 +389,10 @@ export default function Vouchers() {
           </Form>
         )}
       >
+        {/* {console.log(haveVoucher)} */}
         <Form.Item name="haveVoucher" label="Chọn người dùng">
           <Select
+            showSearch
             mode="multiple"
             optionFilterProp="label"
             options={userVoucher}

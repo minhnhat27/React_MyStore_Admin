@@ -49,7 +49,7 @@ export const formatDateTime = (value) => {
     .replaceAll('/', '-')
 }
 
-export const toImageSrc = (url) => API_URL + '/' + url
+export const toImageSrc = (url) => (url ? API_URL + '/' + url : undefined)
 
 export const showError = (err) => err.response?.data?.title || err.response?.data || err.message
 
